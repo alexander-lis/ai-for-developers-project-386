@@ -3,6 +3,7 @@ import "@typespec/http";
 using Http;
 
 @service(#{ title: "Calendar API" })
+@route("/api")
 namespace CalendarApi;
 
 model HealthStatus {

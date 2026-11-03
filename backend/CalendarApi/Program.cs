@@ -12,7 +12,9 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-app.MapGet("/health", () => new HealthStatus("ok"))
+var api = app.MapGroup("/api");
+
+api.MapGet("/health", () => new HealthStatus("ok"))
     .WithName("Health_check");
 
 app.Run();
