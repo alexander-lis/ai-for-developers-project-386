@@ -1,13 +1,13 @@
-import { useState } from 'react'
-import { healthCheck } from '@/client'
-import { Button } from '@/components/ui/button'
+import { useState } from "react";
+import { healthCheck } from "@/client";
+import { Button } from "@/components/ui/button";
 
 function App() {
-  const [status, setStatus] = useState('не проверен')
+  const [status, setStatus] = useState("не проверен");
 
   async function check() {
-    const { data } = await healthCheck()
-    setStatus(data?.status ?? 'недоступен')
+    const { data } = await healthCheck();
+    setStatus(data?.status ?? "недоступен");
   }
 
   return (
@@ -16,7 +16,7 @@ function App() {
       <Button onClick={check}>Проверить бекенд</Button>
       <p>Бекенд: {status}</p>
     </main>
-  )
+  );
 }
 
-export default App
+export default App;

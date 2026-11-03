@@ -9,5 +9,9 @@
     "@typespec/openapi": "^1.17.0",
     "@typespec/openapi3": "^1.17.0",
     "@typespec/rest": "^0.87.0"
+  },
+  "scripts": {
+    "fmt": "tsp format \"*.tsp\"",
+    "fmt:check": "tsp format --check \"*.tsp\""
   }
 }
