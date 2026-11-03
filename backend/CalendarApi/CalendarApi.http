@@ -1,0 +1,6 @@
+@CalendarApi_HostAddress = http://localhost:5284
+
+GET {{CalendarApi_HostAddress}}/health
+Accept: application/json
+
+###
