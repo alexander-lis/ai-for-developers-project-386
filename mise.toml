@@ -1,9 +1,13 @@
+[settings]
+experimental = true
+
 [tools]
 betterleaks = "1.9.0"
 dotnet = "10"
 hk = { version = "2.11.0", workflow = "release.yml" }
 jactionlint = { version = "2.4.0", workflow = "release.yaml" }
 node = "26"
+pitchfork = "2.33.0"
 
 [tasks.install]
 description = "Install npm dependencies"
@@ -44,3 +48,21 @@ run = "hk check --all"
 [tasks.fix]
 description = "Apply automatic fixes"
 run = "hk fix --all"
+
+[tasks.dev]
+description = "Start backend and frontend in the background: http://localhost:5173"
+depends = ["generate"]
+run = "mise daemons start"
+
+[tasks."dev:stop"]
+description = "Stop backend and frontend"
+run = "mise daemons stop"
+
+[daemons.backend]
+run = "exec dotnet run --project backend/CalendarApi"
+ready_port = 5284
+
+[daemons.frontend]
+run = "exec npm run dev --prefix frontend -- --strictPort --host 127.0.0.1"
+depends = ["backend"]
+ready_port = 5173
