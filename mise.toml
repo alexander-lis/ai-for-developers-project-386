@@ -1,3 +1,46 @@
 [tools]
+betterleaks = "1.9.0"
 dotnet = "10"
+hk = { version = "2.11.0", workflow = "release.yml" }
+jactionlint = { version = "2.4.0", workflow = "release.yaml" }
 node = "26"
+
+[tasks.install]
+description = "Install npm dependencies"
+run = [
+  "npm ci",
+  "npm ci --prefix contract",
+  "npm ci --prefix frontend",
+]
+
+[tasks.setup]
+description = "Install dependencies and git hooks"
+depends = ["install"]
+run = "hk install --mise"
+
+[tasks.generate]
+description = "Generate OpenAPI and the frontend client from the contract"
+run = [
+  "npm run --prefix contract --silent build",
+  "npm run --prefix frontend --silent openapi-ts",
+]
+
+[tasks.lint]
+description = "Run linters, formatters and type checks"
+run = "hk run lint --all"
+
+[tasks.test]
+description = "Run backend and frontend tests"
+depends = ["generate"]
+run = [
+  "dotnet test backend/CalendarApi.slnx",
+  "npm test --prefix frontend",
+]
+
+[tasks.check]
+description = "Run every check, the same set CI runs"
+run = "hk check --all"
+
+[tasks.fix]
+description = "Apply automatic fixes"
+run = "hk fix --all"

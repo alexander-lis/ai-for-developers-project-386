@@ -12,6 +12,7 @@
   },
   "scripts": {
     "fmt": "tsp format \"*.tsp\"",
-    "fmt:check": "tsp format --check \"*.tsp\""
+    "fmt:check": "tsp format --check \"*.tsp\"",
+    "build": "tsp compile . --warn-as-error"
   }
 }

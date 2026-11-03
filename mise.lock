@@ -2,10 +2,145 @@
 
 lockfile_version = 3
 
+[[tools.betterleaks]]
+version = "1.9.0"
+backend = "aqua:betterleaks/betterleaks"
+specifiers = ["1.9.0"]
+
+[tools.betterleaks."platforms.linux-arm64"]
+checksum = "sha256:1d39116e0a58dc94574715e2aa12a2dbd5062f193eee3fec011fef6ba06bd13b"
+url = "https://github.com/betterleaks/betterleaks/releases/download/v1.9.0/betterleaks_1.9.0_linux_arm64.tar.gz"
+url_api = "https://api.github.com/repos/betterleaks/betterleaks/releases/assets/599108932"
+provenance = "cosign"
+
+[tools.betterleaks."platforms.linux-arm64-musl"]
+checksum = "sha256:1d39116e0a58dc94574715e2aa12a2dbd5062f193eee3fec011fef6ba06bd13b"
+url = "https://github.com/betterleaks/betterleaks/releases/download/v1.9.0/betterleaks_1.9.0_linux_arm64.tar.gz"
+url_api = "https://api.github.com/repos/betterleaks/betterleaks/releases/assets/599108932"
+provenance = "cosign"
+
+[tools.betterleaks."platforms.linux-x64"]
+checksum = "sha256:f8b185a39ffcece2a1ca82bf3a4e7435cd81963ffd16b7a9128daf75f35f6de7"
+url = "https://github.com/betterleaks/betterleaks/releases/download/v1.9.0/betterleaks_1.9.0_linux_x64.tar.gz"
+url_api = "https://api.github.com/repos/betterleaks/betterleaks/releases/assets/599108929"
+provenance = "cosign"
+
+[tools.betterleaks."platforms.linux-x64-musl"]
+checksum = "sha256:f8b185a39ffcece2a1ca82bf3a4e7435cd81963ffd16b7a9128daf75f35f6de7"
+url = "https://github.com/betterleaks/betterleaks/releases/download/v1.9.0/betterleaks_1.9.0_linux_x64.tar.gz"
+url_api = "https://api.github.com/repos/betterleaks/betterleaks/releases/assets/599108929"
+provenance = "cosign"
+
+[tools.betterleaks."platforms.macos-arm64"]
+checksum = "sha256:83dd7eaab13d44a1e8e347a17064cdef153a1478db473276d41b38d55613d3f2"
+url = "https://github.com/betterleaks/betterleaks/releases/download/v1.9.0/betterleaks_1.9.0_darwin_arm64.tar.gz"
+url_api = "https://api.github.com/repos/betterleaks/betterleaks/releases/assets/599108927"
+provenance = "cosign"
+
+[tools.betterleaks."platforms.macos-x64"]
+checksum = "sha256:68dfd83458d9e7f90663daa7a81c7f944083b170dae82e4f5f8d0581ed519ef1"
+url = "https://github.com/betterleaks/betterleaks/releases/download/v1.9.0/betterleaks_1.9.0_darwin_x64.tar.gz"
+url_api = "https://api.github.com/repos/betterleaks/betterleaks/releases/assets/599108931"
+provenance = "cosign"
+
+[tools.betterleaks."platforms.windows-x64"]
+checksum = "sha256:b765daec9fda475b031b5a5159798cbe4294a3f2a50683cbc0471226e376d3da"
+url = "https://github.com/betterleaks/betterleaks/releases/download/v1.9.0/betterleaks_1.9.0_windows_x64.zip"
+url_api = "https://api.github.com/repos/betterleaks/betterleaks/releases/assets/599108997"
+provenance = "cosign"
+
 [[tools.dotnet]]
 version = "10.0.403"
 backend = "core:dotnet"
 specifiers = ["10"]
+
+[[tools.hk]]
+version = "2.11.0"
+backend = "packslip:github.com/jdx/hk"
+specifiers = ["2.11.0"]
+
+[tools.hk."platforms.linux-arm64"]
+checksum = "sha256:49cbba44159c17a760319ccfcca0fe4a07fa716f217c157ea734923160b8acb9"
+url = "https://github.com/jdx/hk/releases/download/v2.11.0/hk-aarch64-unknown-linux-gnu.tar.gz"
+signer = "sigstore-oidc:https://github.com/jdx/hk/.github/workflows/release.yml"
+repository_ids = { repository = "922514152" }
+
+[tools.hk."platforms.linux-arm64-musl"]
+checksum = "sha256:9bb573baf0931bf4cce5c681dcb1b2bcbd5bc9b7fcbd079252a742876a529dfc"
+url = "https://github.com/jdx/hk/releases/download/v2.11.0/hk-aarch64-unknown-linux-musl.tar.gz"
+signer = "sigstore-oidc:https://github.com/jdx/hk/.github/workflows/release.yml"
+repository_ids = { repository = "922514152" }
+
+[tools.hk."platforms.linux-x64"]
+checksum = "sha256:a461eb97df8e60c4447d1fdaa74a3d31598d7aba0d7a68ceebad0ff0405c3b5b"
+url = "https://github.com/jdx/hk/releases/download/v2.11.0/hk-x86_64-unknown-linux-gnu.tar.gz"
+signer = "sigstore-oidc:https://github.com/jdx/hk/.github/workflows/release.yml"
+repository_ids = { repository = "922514152" }
+
+[tools.hk."platforms.linux-x64-musl"]
+checksum = "sha256:edac507e4fb248a7d0885367b87ec002b073c530bcb07c91334855e54c4b0352"
+url = "https://github.com/jdx/hk/releases/download/v2.11.0/hk-x86_64-unknown-linux-musl.tar.gz"
+signer = "sigstore-oidc:https://github.com/jdx/hk/.github/workflows/release.yml"
+repository_ids = { repository = "922514152" }
+
+[tools.hk."platforms.macos-arm64"]
+checksum = "sha256:65cc3490e93522b55abe8ae42c2b5ffe452f9fe58282455ad59d10bc0deab272"
+url = "https://github.com/jdx/hk/releases/download/v2.11.0/hk-aarch64-apple-darwin.tar.gz"
+signer = "sigstore-oidc:https://github.com/jdx/hk/.github/workflows/release.yml"
+repository_ids = { repository = "922514152" }
+
+[tools.hk."platforms.windows-x64"]
+checksum = "sha256:cb62de9ffb3d8265c513f194769c7b5575671f7bbfad3fab9529db54a0a32e14"
+url = "https://github.com/jdx/hk/releases/download/v2.11.0/hk-x86_64-pc-windows-msvc.zip"
+signer = "sigstore-oidc:https://github.com/jdx/hk/.github/workflows/release.yml"
+repository_ids = { repository = "922514152" }
+
+[[tools.jactionlint]]
+version = "2.4.0"
+backend = "packslip:github.com/jdx/jactionlint"
+specifiers = ["2.4.0"]
+
+[tools.jactionlint."platforms.linux-arm64"]
+checksum = "sha256:42413391c248f99ff4550d6c866ee717d5ea4ca2b966d9d54ad1503af955e22f"
+url = "https://github.com/jdx/jactionlint/releases/download/v2.4.0/jactionlint_2.4.0_linux_arm64.tar.gz"
+signer = "sigstore-oidc:https://github.com/jdx/jactionlint/.github/workflows/release.yaml"
+repository_ids = { repository = "1404951382" }
+
+[tools.jactionlint."platforms.linux-arm64-musl"]
+checksum = "sha256:42413391c248f99ff4550d6c866ee717d5ea4ca2b966d9d54ad1503af955e22f"
+url = "https://github.com/jdx/jactionlint/releases/download/v2.4.0/jactionlint_2.4.0_linux_arm64.tar.gz"
+signer = "sigstore-oidc:https://github.com/jdx/jactionlint/.github/workflows/release.yaml"
+repository_ids = { repository = "1404951382" }
+
+[tools.jactionlint."platforms.linux-x64"]
+checksum = "sha256:26ddba81db28fffc51163175c070ee1a9d1150260de4b5232f01d9b749f32d8e"
+url = "https://github.com/jdx/jactionlint/releases/download/v2.4.0/jactionlint_2.4.0_linux_amd64.tar.gz"
+signer = "sigstore-oidc:https://github.com/jdx/jactionlint/.github/workflows/release.yaml"
+repository_ids = { repository = "1404951382" }
+
+[tools.jactionlint."platforms.linux-x64-musl"]
+checksum = "sha256:26ddba81db28fffc51163175c070ee1a9d1150260de4b5232f01d9b749f32d8e"
+url = "https://github.com/jdx/jactionlint/releases/download/v2.4.0/jactionlint_2.4.0_linux_amd64.tar.gz"
+signer = "sigstore-oidc:https://github.com/jdx/jactionlint/.github/workflows/release.yaml"
+repository_ids = { repository = "1404951382" }
+
+[tools.jactionlint."platforms.macos-arm64"]
+checksum = "sha256:349a13dbffdd25376898a256d195806afda08ba97ccc6378cbf2dd11a77ef8e7"
+url = "https://github.com/jdx/jactionlint/releases/download/v2.4.0/jactionlint_2.4.0_darwin_arm64.tar.gz"
+signer = "sigstore-oidc:https://github.com/jdx/jactionlint/.github/workflows/release.yaml"
+repository_ids = { repository = "1404951382" }
+
+[tools.jactionlint."platforms.macos-x64"]
+checksum = "sha256:4c21fce834f8267b65a65b32a527aaa2ec1c321c8f066d44b42d7f038835aa90"
+url = "https://github.com/jdx/jactionlint/releases/download/v2.4.0/jactionlint_2.4.0_darwin_amd64.tar.gz"
+signer = "sigstore-oidc:https://github.com/jdx/jactionlint/.github/workflows/release.yaml"
+repository_ids = { repository = "1404951382" }
+
+[tools.jactionlint."platforms.windows-x64"]
+checksum = "sha256:4e0c7b428a4faa35bb3b86af6fa65a0ac9797edcd4c64e4f7e16ca886437e172"
+url = "https://github.com/jdx/jactionlint/releases/download/v2.4.0/jactionlint_2.4.0_windows_amd64.zip"
+signer = "sigstore-oidc:https://github.com/jdx/jactionlint/.github/workflows/release.yaml"
+repository_ids = { repository = "1404951382" }
 
 [[tools.node]]
 version = "26.13.0"

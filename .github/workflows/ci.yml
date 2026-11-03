@@ -1,0 +1,44 @@
+name: CI
+
+on: push
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # commitlint reads the pushed commits
+          persist-credentials: false
+
+      # Installs the tools pinned in mise.toml, the same ones used locally.
+      - name: Setup mise
+        uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install dependencies
+        run: mise run install
+
+      # A new branch or a force push has no usable "before" commit: check the last one.
+      - name: Check commit messages
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: |
+          if git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+            npx --no -- commitlint --from "$BEFORE" --to "$GITHUB_SHA"
+          else
+            npx --no -- commitlint --last
+          fi
+
+      - name: Run checks
+        run: mise run check

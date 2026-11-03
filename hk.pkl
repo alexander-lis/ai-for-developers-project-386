@@ -1,0 +1,97 @@
+amends "package://github.com/jdx/hk/releases/download/v2.11.0/hk@2.11.0#/Config.pkl"
+import "package://github.com/jdx/hk/releases/download/v2.11.0/hk@2.11.0#/Builtins.pkl"
+
+// On commit: fast checks of changed files. Fix with `mise run fix`.
+local fast = new Mapping<String, Step> {
+  ["betterleaks"] = Builtins.betterleaks
+  ["jactionlint"] = Builtins.jactionlint
+  ["contract-fmt"] {
+    dir = "contract"
+    glob = List("**/*.tsp")
+    check = "npm run --silent fmt:check"
+    fix = "npm run --silent fmt"
+  }
+  ["frontend-lint"] {
+    dir = "frontend"
+    glob = List("**/*.ts", "**/*.tsx")
+    check = "npm run --silent lint"
+  }
+  ["frontend-fmt"] {
+    dir = "frontend"
+    exclude = List("src/client/**")
+    check = "npm run --silent fmt:check"
+    fix = "npm run --silent fmt"
+  }
+  ["backend-fmt"] {
+    dir = "backend"
+    glob = List("**/*.cs", "**/*.csproj", "**/*.slnx", "**/*.props")
+    check = "dotnet format CalendarApi.slnx --verify-no-changes"
+    fix = "dotnet format CalendarApi.slnx"
+  }
+}
+
+// The frontend client is generated and not in git, so type checks and tests need it first.
+local typed = (fast) {
+  ["generate"] {
+    check = "mise run generate"
+  }
+  ["frontend-typecheck"] {
+    depends = "generate"
+    dir = "frontend"
+    check = "npm run --silent typecheck"
+  }
+  ["frontend-knip"] {
+    depends = "generate"
+    dir = "frontend"
+    check = "npm run --silent knip"
+  }
+}
+
+// Before push: everything that does not need the vulnerability database.
+local full = (typed) {
+  ["frontend-test"] {
+    depends = "generate"
+    dir = "frontend"
+    check = "npm test --silent"
+  }
+  // backend-fmt and dotnet test both use obj/, so they must not run at once.
+  ["backend-test"] {
+    depends = "backend-fmt"
+    dir = "backend"
+    check = "dotnet test CalendarApi.slnx"
+  }
+}
+
+hooks {
+  ["pre-commit"] {
+    stash = "none"
+    steps = fast
+  }
+  ["commit-msg"] {
+    steps {
+      ["commitlint"] {
+        check = "npx --no -- commitlint --edit {{commit_msg_file}}"
+      }
+    }
+  }
+  ["pre-push"] {
+    steps = full
+  }
+  ["lint"] {
+    steps = typed
+  }
+  ["check"] {
+    steps = (full) {
+      // Only runtime dependencies: dev tools have no fixed versions yet and never reach users.
+      ["frontend-audit"] {
+        dir = "frontend"
+        check = "npm audit --omit=dev"
+      }
+    }
+  }
+  ["fix"] {
+    fix = true
+    stash = "none"
+    steps = fast
+  }
+}
