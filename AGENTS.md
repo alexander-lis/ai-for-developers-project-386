@@ -30,6 +30,10 @@
 
 Все эндпоинты лежат под `/api`: по этому префиксу Vite проксирует запросы на бекенд.
 
+Фронтенд: React Router, маршруты и навигация по ролям описаны в `frontend/src/routes.ts`, страницы в `frontend/src/pages`. Роль «владелец/гость» это фронтовое состояние в `localStorage` (`frontend/src/role-provider.tsx`), бекенд о ролях не знает.
+
+Термины предметной области в `GLOSSARY.md`: в коде, задачах и тестах используем их, а не синонимы.
+
 Компоненты shadcn/ui лежат в `frontend/src/components/ui`. Добавлять: `npx shadcn@latest add <name>` из `frontend/`, затем `mise run fix`.
 
 ## Правила
