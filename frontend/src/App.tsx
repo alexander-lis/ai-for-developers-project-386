@@ -1,21 +1,45 @@
-import { useState } from "react";
-import { healthCheck } from "@/client";
-import { Button } from "@/components/ui/button";
+import { Navigate, Outlet, Route, Routes } from "react-router";
+import { SiteHeader } from "@/components/site-header";
+import { HomePage } from "@/pages/home";
+import { StubPage } from "@/pages/stub";
+import { useRole, type Role } from "@/role";
+import { RoleProvider } from "@/role-provider";
+import { paths } from "@/routes";
+
+function Layout() {
+  return (
+    <>
+      <SiteHeader />
+      <main className="mx-auto max-w-5xl px-6">
+        <Outlet />
+      </main>
+    </>
+  );
+}
+
+function RequireRole({ role }: { role: Role }) {
+  const current = useRole().role;
+  return current === role ? <Outlet /> : <Navigate to={paths.home} replace />;
+}
 
 function App() {
-  const [status, setStatus] = useState("не проверен");
-
-  async function check() {
-    const { data } = await healthCheck();
-    setStatus(data?.status ?? "недоступен");
-  }
-
   return (
-    <main className="flex min-h-svh flex-col items-center justify-center gap-4">
-      <h1 className="text-2xl font-medium">Календарь звонков</h1>
-      <Button onClick={check}>Проверить бекенд</Button>
-      <p>Бекенд: {status}</p>
-    </main>
+    <RoleProvider>
+      <Routes>
+        <Route element={<Layout />}>
+          <Route index element={<HomePage />} />
+          <Route element={<RequireRole role="guest" />}>
+            <Route path={paths.book} element={<StubPage title="Запись" />} />
+            <Route path={paths.meetings} element={<StubPage title="Мои встречи" />} />
+          </Route>
+          <Route element={<RequireRole role="owner" />}>
+            <Route path={paths.ownerMeetingTypes} element={<StubPage title="Типы встреч" />} />
+            <Route path={paths.ownerMeetings} element={<StubPage title="Встречи" />} />
+          </Route>
+          <Route path="*" element={<Navigate to={paths.home} replace />} />
+        </Route>
+      </Routes>
+    </RoleProvider>
   );
 }
 
