@@ -39,3 +39,17 @@
 - TypeScript во `frontend` держим на 6.x: `@hey-api/openapi-ts` 0.99.0 падает на версии 7. По этой же причине в `tsconfig` только `paths`: `baseUrl` в TS 6 даёт ошибку.
 - Типы проверяет `tsc -b`: корневой `tsconfig.json` содержит только ссылки, и `tsc --noEmit` на нём проверяет 0 файлов.
 - Vite в daemon запускается с `--host 127.0.0.1`: `ready_port` проверяет IPv4, а без флага Vite слушает только `[::1]`, и `mise run dev` виснет.
+
+## Agent skills
+
+### Issue tracker
+
+Задачи ведём в GitHub Issues этого репозитория через `gh`. См. `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Стандартные пять меток триажа: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. См. `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: `GLOSSARY.md` и `docs/adr/` в корне. См. `docs/agents/domain.md`.
