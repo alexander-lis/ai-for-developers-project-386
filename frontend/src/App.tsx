@@ -1,6 +1,7 @@
 import { Navigate, Outlet, Route, Routes } from "react-router";
 import { SiteHeader } from "@/components/site-header";
 import { Toaster } from "@/components/ui/sonner";
+import { BookPage } from "@/pages/book";
 import { HomePage } from "@/pages/home";
 import { MeetingTypesPage } from "@/pages/meeting-types";
 import { StubPage } from "@/pages/stub";
@@ -33,7 +34,7 @@ function App() {
         <Route element={<Layout />}>
           <Route index element={<HomePage />} />
           <Route element={<RequireRole role="guest" />}>
-            <Route path={paths.book} element={<StubPage title="Запись" />} />
+            <Route path={paths.book} element={<BookPage />} />
             <Route path={paths.meetings} element={<StubPage title="Мои встречи" />} />
           </Route>
           <Route element={<RequireRole role="owner" />}>

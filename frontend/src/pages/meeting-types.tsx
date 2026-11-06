@@ -8,7 +8,7 @@ import {
   type WriteOutcome,
 } from "@/components/meeting-type-dialogs";
 import { Button } from "@/components/ui/button";
-import { meetingTypeGone } from "@/messages";
+import { meetingTypeGone, noMeetingTypes } from "@/messages";
 
 type State =
   | { status: "loading" }
@@ -95,7 +95,7 @@ function MeetingTypeList({
   onDelete: (meetingType: MeetingType) => void;
 }) {
   if (meetingTypes.length === 0) {
-    return <p className="text-muted-foreground">Владелец ещё не добавил типы встреч</p>;
+    return <p className="text-muted-foreground">{noMeetingTypes}</p>;
   }
 
   return (

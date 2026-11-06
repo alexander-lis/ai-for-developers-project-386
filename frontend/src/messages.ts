@@ -5,3 +5,10 @@ export const serverUnavailable = "Не удалось связаться с се
 export const checkInput = "Проверьте введённые данные";
 
 export const meetingTypeGone = "Этот тип встречи уже удалён";
+
+/** A Guest picked a meeting type that the Owner has deleted since the list was loaded. */
+export const meetingTypeUnavailable = "Этот тип встречи больше недоступен";
+
+export const noMeetingTypes = "Владелец ещё не добавил типы встреч";
+
+export const noFreeSlots = "В ближайшие 14 дней свободных слотов нет";
