@@ -1,5 +1,6 @@
 import { Navigate, Outlet, Route, Routes } from "react-router";
 import { SiteHeader } from "@/components/site-header";
+import { Toaster } from "@/components/ui/sonner";
 import { HomePage } from "@/pages/home";
 import { MeetingTypesPage } from "@/pages/meeting-types";
 import { StubPage } from "@/pages/stub";
@@ -14,6 +15,8 @@ function Layout() {
       <main className="mx-auto max-w-5xl px-6">
         <Outlet />
       </main>
+      {/* The app has no dark theme: "system" would darken toasts on a dark OS. */}
+      <Toaster theme="light" />
     </>
   );
 }
