@@ -297,7 +297,7 @@ function BookingCalendar({
           noSlots: "[&_button]:line-through",
         }}
       />
-      {withSlots.size === 0 && <p className="text-muted-foreground">{noFreeSlots}</p>}
+      {withSlots.size === 0 && <p className="text-muted-foreground">{noFreeSlots(days.length)}</p>}
     </div>
   );
 }

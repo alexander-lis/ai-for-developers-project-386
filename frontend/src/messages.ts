@@ -12,7 +12,13 @@ export const meetingTypeUnavailable = "Этот тип встречи больш
 
 export const noMeetingTypes = "Владелец ещё не добавил типы встреч";
 
-export const noFreeSlots = "В ближайшие 14 дней свободных слотов нет";
+const dayWords: Partial<Record<Intl.LDMLPluralRule, string>> = { one: "день", few: "дня" };
+
+/** No free slot on any of the `days` days of the booking window the server returned. */
+export function noFreeSlots(days: number): string {
+  const word = dayWords[new Intl.PluralRules("ru-RU").select(days)] ?? "дней";
+  return `В ближайшие ${days} ${word} свободных слотов нет`;
+}
 
 /** The slot stopped being free after the Guest saw it: see "Конфликт" in GLOSSARY.md. */
 export const bookingConflict = "Это время уже занято, выберите другое";
