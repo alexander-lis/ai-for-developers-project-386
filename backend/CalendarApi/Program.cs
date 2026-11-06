@@ -67,16 +67,60 @@ api.MapPut("/meeting-types/{id:guid}", async Task<Results<Ok<MeetingType>, NotFo
 api.MapGet("/meeting-types/{id:guid}/booking-days", async Task<Results<Ok<IReadOnlyList<BookingDay>>, NotFound>> (
     Guid id, CalendarDb db, TimeProvider time) =>
 {
+    var now = time.GetUtcNow();
     var meetingType = await db.MeetingTypes.FindAsync(id);
     return meetingType is null
         ? TypedResults.NotFound()
-        : TypedResults.Ok(CalendarRules.BookingDays(time.GetUtcNow(), meetingType.DurationMinutes, meetings: []));
+        : TypedResults.Ok(CalendarRules.BookingDays(now, meetingType.DurationMinutes, await db.MeetingsAfter(now)));
 });
 
 api.MapDelete("/meeting-types/{id:guid}", async Task<Results<NoContent, NotFound>> (Guid id, CalendarDb db) =>
     await db.MeetingTypes.Where(t => t.Id == id).ExecuteDeleteAsync() == 0
         ? TypedResults.NotFound()
         : TypedResults.NoContent());
+
+api.MapPost("/meetings", async Task<Results<Created<Meeting>, NotFound, ValidationProblem, ProblemHttpResult>> (
+    MeetingInput input, CalendarDb db, TimeProvider time) =>
+{
+    var now = time.GetUtcNow();
+
+    // BEGIN IMMEDIATE, the Microsoft.Data.Sqlite default: one writer at a time, so of simultaneous
+    // bookings the later one sees the earlier meeting (ADR 0003). Every check below stays inside.
+    await using var transaction = await db.Database.BeginTransactionAsync();
+    var meetingType = await db.MeetingTypes.FindAsync(input.MeetingTypeId);
+    if (meetingType is null)
+    {
+        return TypedResults.NotFound();
+    }
+
+    // Before the grid check: a slot of yesterday is a conflict, not a bad request.
+    if (input.Start <= now)
+    {
+        return TypedResults.Problem(statusCode: StatusCodes.Status409Conflict,
+            detail: "The slot has already started.");
+    }
+
+    var slot = CalendarRules.GridSlot(now, input.Start!.Value, meetingType.DurationMinutes);
+    if (slot is null)
+    {
+        return TypedResults.ValidationProblem(new Dictionary<string, string[]>
+        {
+            ["start"] = ["The start is not a slot of the meeting type in the booking window."],
+        });
+    }
+
+    if (CalendarRules.Crosses(slot, await db.MeetingsAfter(now)))
+    {
+        return TypedResults.Problem(statusCode: StatusCodes.Status409Conflict,
+            detail: "Another meeting crosses the slot.");
+    }
+
+    var meeting = Meeting.Book(meetingType, input.GuestName, slot);
+    db.Meetings.Add(meeting);
+    await db.SaveChangesAsync();
+    await transaction.CommitAsync();
+    return TypedResults.Created((string?)null, meeting);
+});
 
 app.Run();
 

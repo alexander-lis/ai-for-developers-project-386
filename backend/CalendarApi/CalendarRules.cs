@@ -28,8 +28,21 @@ public static class CalendarRules
     private static readonly TimeZoneInfo TimeZone = TimeZoneInfo.FindSystemTimeZoneById(TimeZoneId);
 
     /// <summary>Today in the Calendar time zone.</summary>
-    public static DateOnly Today(DateTimeOffset now) =>
-        DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(now, TimeZone).DateTime);
+    public static DateOnly Today(DateTimeOffset now) => DayOf(now);
+
+    /// <summary>
+    /// The slot of the meeting type grid that starts at <paramref name="start"/> on a day of the
+    /// booking window, regardless of "now" within the day and of meetings; null if the server would
+    /// never offer that start. The start may come with any offset: it is compared as a moment.
+    /// </summary>
+    public static Slot? GridSlot(DateTimeOffset now, DateTimeOffset start, int durationMinutes)
+    {
+        var day = DayOf(start);
+        var today = Today(now);
+        return day < today || day >= today.AddDays(BookingWindowDays)
+            ? null
+            : Grid(day, durationMinutes).FirstOrDefault(slot => slot.Start == start.UtcDateTime);
+    }
 
     /// <summary>
     /// Every day of the booking window in order, each with its free slots: grid slots that start
@@ -71,6 +84,9 @@ public static class CalendarRules
             yield return new Slot(ToUtc(day, start), ToUtc(day, start + duration));
         }
     }
+
+    private static DateOnly DayOf(DateTimeOffset moment) =>
+        DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(moment, TimeZone).DateTime);
 
     private static DateTime ToUtc(DateOnly day, TimeSpan timeOfDay) =>
         TimeZoneInfo.ConvertTimeToUtc(day.ToDateTime(TimeOnly.MinValue).Add(timeOfDay), TimeZone);

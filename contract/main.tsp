@@ -49,6 +49,16 @@ model NotFoundProblem extends Problem {
   status: 404;
 }
 
+/**
+ * The slot is no longer free: another meeting crosses it, or it has already started.
+ * The reason is only in `detail`.
+ */
+@error
+model ConflictProblem extends Problem {
+  @statusCode statusCode: 409;
+  status: 409;
+}
+
 /** Settings of the single calendar that the frontend needs */
 model CalendarSettings {
   /** IANA name of the calendar time zone; every time in the interface is shown in it */
@@ -150,4 +160,67 @@ interface MeetingTypes {
   @delete delete(@path @format("uuid") id: string):
     | NoContentResponse
     | NotFoundProblem;
+}
+
+/**
+ * A Guest booked on a slot with a meeting type. Keeps the meeting type name and its own time as
+ * they were at booking: later edits or deletion of the meeting type do not change it.
+ */
+model Meeting {
+  /** Assigned by the server */
+  @format("uuid")
+  id: string;
+
+  /** Only a reference: the meeting type may have been deleted since */
+  @format("uuid")
+  meetingTypeId: string;
+
+  /** The meeting type name at booking */
+  @minLength(1)
+  @maxLength(100)
+  meetingTypeName: string;
+
+  @minLength(1)
+  @maxLength(100)
+  guestName: string;
+
+  start: utcDateTime;
+
+  /** Start plus the meeting type duration at booking */
+  end: utcDateTime;
+}
+
+/** What a Guest sends to book a slot */
+model MeetingInput {
+  @format("uuid")
+  meetingTypeId: string;
+
+  /**
+   * Stored without leading and trailing whitespace. The server is stricter than the schema:
+   * a name of only whitespace is rejected with 400.
+   */
+  @minLength(1)
+  @maxLength(100)
+  guestName: string;
+
+  /**
+   * The start of a slot the server offers for the meeting type, with any offset. A start off the
+   * grid, outside working hours, on a day off or outside the booking window is a 400 under
+   * `start`; a start that is not later than now is a 409.
+   */
+  start: utcDateTime;
+}
+
+@route("/meetings")
+@tag("Meetings")
+interface Meetings {
+  /** Book a slot; of simultaneous bookings of crossing slots exactly one succeeds */
+  @post create(@body input: MeetingInput):
+    | {
+        @statusCode statusCode: 201;
+        @body meeting: Meeting;
+      }
+    | ValidationProblem
+    | NotFoundProblem
+    | ConflictProblem;
 }
