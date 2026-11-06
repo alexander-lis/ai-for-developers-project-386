@@ -28,11 +28,12 @@ import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  meetingTypeServerErrors,
   validateMeetingTypeForm,
   type MeetingTypeFormErrors,
   type MeetingTypeFormValues,
 } from "@/meeting-type-form";
-import { checkInput, serverUnavailable } from "@/messages";
+import { serverUnavailable } from "@/messages";
 
 /** How a write ended for the list: it changed, or the meeting type was already deleted (404). */
 export type WriteOutcome = "done" | "meetingTypeDeleted";
@@ -97,7 +98,7 @@ function MeetingTypeForm({
 
     setFormError(undefined);
     setSubmitting(true);
-    const { data, response } = meetingType
+    const { data, error, response } = meetingType
       ? await meetingTypesUpdate({ path: { id: meetingType.id }, body: checked.input })
       : await meetingTypesCreate({ body: checked.input });
     setSubmitting(false);
@@ -107,8 +108,10 @@ function MeetingTypeForm({
     } else if (response?.status === 404) {
       onDone("meetingTypeDeleted");
     } else if (response?.status === 400) {
-      // The form checks the same rules first, so this is rare: no field to point at.
-      setFormError(checkInput);
+      // The form checks the same rules first, so this is rare.
+      const mapped = meetingTypeServerErrors(error && "errors" in error ? error.errors : {});
+      setErrors(mapped.errors);
+      setFormError(mapped.formError);
     } else {
       toast.error(serverUnavailable);
     }

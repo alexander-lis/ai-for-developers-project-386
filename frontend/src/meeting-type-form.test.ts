@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { validateMeetingTypeForm } from "./meeting-type-form";
+import { meetingTypeServerErrors, validateMeetingTypeForm } from "./meeting-type-form";
 
 it("turns valid values into a trimmed meeting type input", () => {
   expect(
@@ -85,4 +85,25 @@ it("counts name length after trimming", () => {
       durationMinutes: "30",
     }),
   ).toHaveProperty("input.name", "а".repeat(100));
+});
+
+it("puts server errors under the fields they name", () => {
+  expect(
+    meetingTypeServerErrors({
+      name: ["Не длиннее 100 символов"],
+      durationMinutes: ["Слишком долго", "Не число"],
+    }),
+  ).toEqual({
+    errors: { name: "Не длиннее 100 символов", durationMinutes: "Слишком долго Не число" },
+  });
+});
+
+it("falls back to a form error for keys with no field", () => {
+  expect(
+    meetingTypeServerErrors({ name: ["Введите название"], body: ["Не удалось прочитать JSON"] }),
+  ).toEqual({ errors: { name: "Введите название" }, formError: "Проверьте введённые данные" });
+  expect(meetingTypeServerErrors({})).toEqual({
+    errors: {},
+    formError: "Проверьте введённые данные",
+  });
 });
