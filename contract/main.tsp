@@ -49,6 +49,19 @@ model NotFoundProblem extends Problem {
   status: 404;
 }
 
+/** Settings of the single calendar that the frontend needs */
+model CalendarSettings {
+  /** IANA name of the calendar time zone; every time in the interface is shown in it */
+  timeZone: string;
+}
+
+@route("/calendar")
+@tag("Calendar")
+interface Calendar {
+  /** Get the calendar settings */
+  @get get(): CalendarSettings;
+}
+
 /** A template the Owner offers to Guests: what the call is about and how long it lasts */
 model MeetingType {
   /** Assigned by the server */

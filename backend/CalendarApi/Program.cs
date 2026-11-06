@@ -31,6 +31,8 @@ var api = app.MapGroup("/api");
 
 api.MapGet("/health", () => new HealthStatus("ok"));
 
+api.MapGet("/calendar", () => CalendarRules.Settings);
+
 // SQLite NOCASE does not know Cyrillic, so sort after loading.
 var byName = StringComparer.Create(CultureInfo.GetCultureInfo("ru-RU"), ignoreCase: true);
 api.MapGet("/meeting-types", async (CalendarDb db) =>
