@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using CalendarApi;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -51,6 +52,21 @@ api.MapPost("/meeting-types", async (MeetingTypeInput input, CalendarDb db) =>
     db.MeetingTypes.Add(meetingType);
     await db.SaveChangesAsync();
     return TypedResults.Created((string?)null, meetingType);
+});
+
+// No idempotent outcome: a missing meeting type is 404 for every write.
+api.MapPut("/meeting-types/{id:guid}", async Task<Results<Ok<MeetingType>, NotFound>> (
+    Guid id, MeetingTypeInput input, CalendarDb db) =>
+{
+    var meetingType = await db.MeetingTypes.FindAsync(id);
+    if (meetingType is null)
+    {
+        return TypedResults.NotFound();
+    }
+
+    meetingType.Replace(input);
+    await db.SaveChangesAsync();
+    return TypedResults.Ok(meetingType);
 });
 
 app.Run();

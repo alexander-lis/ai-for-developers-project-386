@@ -140,6 +140,69 @@ public class MeetingTypesTests
         Assert.Empty(await client.GetFromJsonAsync<MeetingType[]>("/api/meeting-types") ?? []);
     }
 
+    [Fact]
+    public async Task Update_ReplacesAllFields()
+    {
+        await using var api = new CalendarApiFactory();
+        var client = api.CreateClient();
+        var created = await Create(client,
+            new { name = "Знакомство", description = "Первый звонок", durationMinutes = 30 });
+
+        var response = await client.PutAsJsonAsync($"/api/meeting-types/{created.Id}",
+            new { name = " Разбор ", durationMinutes = 90 });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        await response.MatchesContract("/api/meeting-types/{id}");
+        var listed = await client.GetFromJsonAsync<MeetingType[]>("/api/meeting-types") ?? [];
+        var stored = Assert.Single(listed);
+        Assert.Equal(created.Id, stored.Id);
+        Assert.Equal("Разбор", stored.Name);
+        Assert.Null(stored.Description);
+        Assert.Equal(90, stored.DurationMinutes);
+    }
+
+    [Theory]
+    [MemberData(nameof(InvalidInputs))]
+    public async Task Update_RejectsInvalidInputByField(string body, string field)
+    {
+        await using var api = new CalendarApiFactory();
+        var client = api.CreateClient();
+        var created = await Create(client, new { name = "Знакомство", durationMinutes = 30 });
+
+        var response = await client.PutAsync($"/api/meeting-types/{created.Id}", Json(body));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        await response.MatchesContract("/api/meeting-types/{id}");
+        var problem = await response.Content.ReadFromJsonAsync<ValidationProblem>();
+        Assert.Equal([field], problem?.Errors.Keys);
+        var stored = Assert.Single(await client.GetFromJsonAsync<MeetingType[]>("/api/meeting-types") ?? []);
+        Assert.Equal("Знакомство", stored.Name);
+    }
+
+    [Theory]
+    [InlineData("3f2b8c1e-0d4a-4b6e-9a51-7c2d9e8f1a30")]
+    [InlineData("not-a-guid")]
+    public async Task Update_ReturnsNotFoundForUnknownId(string id)
+    {
+        await using var api = new CalendarApiFactory();
+        var client = api.CreateClient();
+
+        var response = await client.PutAsJsonAsync($"/api/meeting-types/{id}",
+            new { name = "Знакомство", durationMinutes = 30 });
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        await response.MatchesContract("/api/meeting-types/{id}");
+        Assert.Empty(await client.GetFromJsonAsync<MeetingType[]>("/api/meeting-types") ?? []);
+    }
+
+    private static async Task<MeetingType> Create(HttpClient client, object input)
+    {
+        var response = await client.PostAsJsonAsync("/api/meeting-types", input);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<MeetingType>()
+            ?? throw new InvalidOperationException("Created meeting type has no body.");
+    }
+
     private static StringContent Json(string body) => new(body, Encoding.UTF8, "application/json");
 
     private sealed record ValidationProblem(Dictionary<string, string[]> Errors);

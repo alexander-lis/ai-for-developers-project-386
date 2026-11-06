@@ -39,6 +39,13 @@ model ValidationProblem extends Problem {
   errors: Record<string[]>;
 }
 
+/** The resource in the path does not exist, or its id is not a GUID */
+@error
+model NotFoundProblem extends Problem {
+  @statusCode statusCode: 404;
+  status: 404;
+}
+
 /** A template the Owner offers to Guests: what the call is about and how long it lasts */
 model MeetingType {
   /** Assigned by the server */
@@ -91,4 +98,10 @@ interface MeetingTypes {
         @body meetingType: MeetingType;
       }
     | ValidationProblem;
+
+  /** Replace all fields of a meeting type */
+  @put update(@path @format("uuid") id: string, @body input: MeetingTypeInput):
+    | MeetingType
+    | ValidationProblem
+    | NotFoundProblem;
 }
