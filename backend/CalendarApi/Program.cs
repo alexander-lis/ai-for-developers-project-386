@@ -92,7 +92,7 @@ api.MapPost("/meetings", async Task<Results<Created<Meeting>, NotFound, Validati
     var now = time.GetUtcNow();
 
     // BEGIN IMMEDIATE, the Microsoft.Data.Sqlite default: one writer at a time, so of simultaneous
-    // bookings the later one sees the earlier meeting (ADR 0003). Every check below stays inside.
+    // requests the later one sees the earlier meeting (ADR 0003). Every check below stays inside.
     await using var transaction = await db.Database.BeginTransactionAsync();
     var meetingType = await db.MeetingTypes.FindAsync(input.MeetingTypeId);
     if (meetingType is null)

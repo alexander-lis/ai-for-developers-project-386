@@ -220,7 +220,7 @@ interface Meetings {
    */
   @get list(): Meeting[];
 
-  /** Book a slot; of simultaneous bookings of crossing slots exactly one succeeds */
+  /** Book a slot; of simultaneous requests for crossing slots exactly one succeeds */
   @post create(@body input: MeetingInput):
     | {
         @statusCode statusCode: 201;

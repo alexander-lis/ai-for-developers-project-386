@@ -91,7 +91,7 @@ public class MeetingsTests
     }
 
     [Fact]
-    public async Task Book_SecondBookingOfSameSlotIsConflict()
+    public async Task Book_SecondRequestForSameSlotIsConflict()
     {
         await using var api = new CalendarApiFactory();
         var typeId = await AddMeetingType(api, durationMinutes: 60);
@@ -184,7 +184,7 @@ public class MeetingsTests
     }
 
     [Fact]
-    public async Task Book_OfSimultaneousCrossingBookingsExactlyOneSucceeds()
+    public async Task Book_OfSimultaneousCrossingRequestsExactlyOneSucceeds()
     {
         await using var api = new CalendarApiFactory();
         var hour = await AddMeetingType(api, durationMinutes: 60);
@@ -196,13 +196,13 @@ public class MeetingsTests
             (await AddMeetingType(api, durationMinutes: 120), TuesdayTen.AddHours(-1)),
             (await AddMeetingType(api, durationMinutes: 15), TuesdayTen.AddMinutes(15)),
         ];
-        var bookings = Enumerable.Repeat((TypeId: hour, Start: TuesdayTen), 12)
+        var requests = Enumerable.Repeat((TypeId: hour, Start: TuesdayTen), 12)
             .Concat(crossing).Concat(crossing)
             .ToArray();
         var client = api.CreateClient();
 
         var responses = await Task.WhenAll(
-            bookings.Select((booking, i) => Post(client, booking.TypeId, $"Гость {i}", booking.Start)));
+            requests.Select((request, i) => Post(client, request.TypeId, $"Гость {i}", request.Start)));
 
         Assert.Equal(20, responses.Length);
         Assert.Single(responses, r => r.StatusCode == HttpStatusCode.Created);
