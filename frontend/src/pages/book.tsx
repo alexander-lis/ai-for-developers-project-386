@@ -40,10 +40,13 @@ async function fetchPage(): Promise<PageState> {
 }
 
 /** Days of a meeting type; `keepDate` stays selected while it still has slots. */
-async function fetchDays(meetingTypeId: string, keepDate?: string): Promise<DaysState | "gone"> {
+async function fetchDays(
+  meetingTypeId: string,
+  keepDate?: string,
+): Promise<DaysState | "meetingTypeDeleted"> {
   const { data, response } = await meetingTypesBookingDays({ path: { id: meetingTypeId } });
   if (response?.status === 404) {
-    return "gone";
+    return "meetingTypeDeleted";
   }
   if (!data) {
     return { status: "error" };
@@ -63,7 +66,7 @@ export function BookPage() {
   const [meetingTypeId, setMeetingTypeId] = useState<string>();
   const [days, setDays] = useState<DaysState>({ status: "loading" });
   const [slotStart, setSlotStart] = useState<string>();
-  const [gone, setGone] = useState(false);
+  const [typeDeleted, setTypeDeleted] = useState(false);
   const [conflict, setConflict] = useState(false);
   const [booking, setBooking] = useState<BookingState>({ open: false });
   // Only the answer to the latest request may land: types can be switched faster than days load.
@@ -97,8 +100,8 @@ export function BookPage() {
       if (request !== daysRequest.current) {
         return;
       }
-      if (next === "gone") {
-        meetingTypeGone();
+      if (next === "meetingTypeDeleted") {
+        startOverWithoutDeletedType();
         return;
       }
       setDays(next);
@@ -106,17 +109,17 @@ export function BookPage() {
   }
 
   /** The selected meeting type was deleted: start over from a fresh list of types. */
-  function meetingTypeGone() {
+  function startOverWithoutDeletedType() {
     setMeetingTypeId(undefined);
     setSlotStart(undefined);
     setConflict(false);
-    setGone(true);
+    setTypeDeleted(true);
     reloadPage();
   }
 
   function selectMeetingType(id: string) {
     setMeetingTypeId(id);
-    setGone(false);
+    setTypeDeleted(false);
     setConflict(false);
     loadDays(id);
   }
@@ -128,8 +131,8 @@ export function BookPage() {
 
   function finishBooking(outcome: BookingOutcome) {
     setBooking((state) => ({ ...state, open: false }));
-    if (outcome.status === "gone") {
-      meetingTypeGone();
+    if (outcome.status === "meetingTypeDeleted") {
+      startOverWithoutDeletedType();
       return;
     }
     if (outcome.status === "booked" && page.status === "loaded") {
@@ -160,7 +163,7 @@ export function BookPage() {
     <Screen>
       <div className="grid gap-8 lg:grid-cols-[1fr_auto_1fr]">
         <Block title="Тип встречи">
-          {gone && <p role="alert">{meetingTypeUnavailable}</p>}
+          {typeDeleted && <p role="alert">{meetingTypeUnavailable}</p>}
           <MeetingTypeChoice
             meetingTypes={page.meetingTypes}
             selectedId={meetingTypeId}

@@ -35,7 +35,7 @@ import {
 import { checkInput, serverUnavailable } from "@/messages";
 
 /** How a write ended for the list: it changed, or the meeting type was already deleted (404). */
-export type WriteOutcome = "done" | "gone";
+export type WriteOutcome = "done" | "meetingTypeDeleted";
 
 type DialogProps = {
   open: boolean;
@@ -105,7 +105,7 @@ function MeetingTypeForm({
     if (data) {
       onDone("done");
     } else if (response?.status === 404) {
-      onDone("gone");
+      onDone("meetingTypeDeleted");
     } else if (response?.status === 400) {
       // The form checks the same rules first, so this is rare: no field to point at.
       setFormError(checkInput);
@@ -170,7 +170,7 @@ export function DeleteMeetingTypeDialog({
     if (response?.ok) {
       onDone("done");
     } else if (response?.status === 404) {
-      onDone("gone");
+      onDone("meetingTypeDeleted");
     } else {
       toast.error(serverUnavailable);
     }

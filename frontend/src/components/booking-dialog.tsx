@@ -24,7 +24,7 @@ import { checkInput, serverUnavailable } from "@/messages";
 export type BookingOutcome =
   | { status: "booked"; meeting: Meeting }
   | { status: "conflict" }
-  | { status: "gone" };
+  | { status: "meetingTypeDeleted" };
 
 export type BookingTarget = { meetingTypeId: string; meetingTypeName: string; slot: Slot };
 
@@ -98,7 +98,7 @@ function BookingForm({
     } else if (response?.status === 409) {
       onDone({ status: "conflict" });
     } else if (response?.status === 404) {
-      onDone({ status: "gone" });
+      onDone({ status: "meetingTypeDeleted" });
     } else if (response?.status === 400) {
       // The form checks the name first, so this is rare; other fields have nothing to point at.
       const nameErrors = error && "errors" in error ? error.errors.guestName : undefined;

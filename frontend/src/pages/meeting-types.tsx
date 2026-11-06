@@ -8,7 +8,7 @@ import {
   type WriteOutcome,
 } from "@/components/meeting-type-dialogs";
 import { Button } from "@/components/ui/button";
-import { meetingTypeGone, noMeetingTypes } from "@/messages";
+import { meetingTypeAlreadyDeleted, noMeetingTypes } from "@/messages";
 
 type State =
   | { status: "loading" }
@@ -48,8 +48,8 @@ export function MeetingTypesPage() {
   function finishWrite(outcome: WriteOutcome) {
     setEditor((dialog) => ({ ...dialog, open: false }));
     setDeletion((dialog) => ({ ...dialog, open: false }));
-    if (outcome === "gone") {
-      toast(meetingTypeGone);
+    if (outcome === "meetingTypeDeleted") {
+      toast(meetingTypeAlreadyDeleted);
     }
     void fetchMeetingTypes().then(setState);
   }

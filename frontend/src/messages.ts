@@ -4,7 +4,8 @@ export const serverUnavailable = "Не удалось связаться с се
 /** A 400 the form could not attach to one of its fields. */
 export const checkInput = "Проверьте введённые данные";
 
-export const meetingTypeGone = "Этот тип встречи уже удалён";
+/** The Owner wrote to a meeting type that was deleted since the list was loaded. */
+export const meetingTypeAlreadyDeleted = "Этот тип встречи уже удалён";
 
 /** A Guest picked a meeting type that the Owner has deleted since the list was loaded. */
 export const meetingTypeUnavailable = "Этот тип встречи больше недоступен";
