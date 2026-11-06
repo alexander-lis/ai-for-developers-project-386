@@ -16,6 +16,7 @@
 - `mise run lint`: линтеры, форматтеры, типы
 - `mise run fix`: исправить форматирование
 - `mise run check`: все проверки, то же запускает CI; задача готова, когда он зелёный
+- `dotnet ef migrations add <Name> --project backend/CalendarApi`: миграция после правки модели EF Core, сервер применяет её при старте
 
 Один тест:
 
@@ -27,6 +28,8 @@
 `contract/main.tsp` это источник правды об API. `mise run generate` превращает его в `contract/tsp-output/schema/openapi.yaml`, а затем в `frontend/src/client`. Оба результата в git не входят, клиент импортируется как `@/client`.
 
 Сервер в `backend/CalendarApi` (.NET 10, Minimal API) написан вручную: зрелого генератора под него нет. Компилятор не сверяет его с контрактом, поэтому при правке контракта обновляй `Program.cs` и тесты бекенда вместе с ним.
+
+Тесты бекенда сверяют ответы с `openapi.yaml` через `response.MatchesContract(path)` из `ContractAssert.cs`, поэтому без `mise run generate` они падают. Каждый `CalendarApiFactory` поднимает сервер на своём временном файле SQLite (`ConnectionStrings:Calendar`) и удаляет его при освобождении.
 
 Все эндпоинты лежат под `/api`: по этому префиксу Vite проксирует запросы на бекенд.
 
