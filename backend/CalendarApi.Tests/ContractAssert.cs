@@ -14,7 +14,8 @@ public static class ContractAssert
 
     /// <summary>
     /// Fails unless the contract describes the response status and Content-Type for the operation,
-    /// and the body matches the described schema.
+    /// and the body matches the described schema. A status described without content, such as 204,
+    /// requires an empty body.
     /// </summary>
     /// <param name="path">Path template as written in the contract, e.g. <c>/api/meeting-types</c>.</param>
     public static async Task MatchesContract(this HttpResponseMessage response, string path)
@@ -35,14 +36,21 @@ public static class ContractAssert
             operation!.Responses?.TryGetValue(status, out described) == true,
             $"The contract does not describe status {status} for {method} {path}.");
 
+        var text = await response.Content.ReadAsStringAsync();
+        if (described!.Content is not { Count: > 0 })
+        {
+            Assert.True(text.Length == 0, $"The contract describes no body for {status} of {method} {path}.");
+            return;
+        }
+
         var mediaType = response.Content.Headers.ContentType?.MediaType;
         OpenApiMediaType? content = null;
         Assert.True(
-            mediaType is not null && described!.Content?.TryGetValue(mediaType, out content) == true,
+            mediaType is not null && described.Content?.TryGetValue(mediaType, out content) == true,
             $"The contract does not describe Content-Type {mediaType ?? "(none)"} "
             + $"for {status} of {method} {path}.");
 
-        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        using var body = JsonDocument.Parse(text);
         var results = SchemaOf(content!).Evaluate(
             body.RootElement, new EvaluationOptions { OutputFormat = OutputFormat.List });
 

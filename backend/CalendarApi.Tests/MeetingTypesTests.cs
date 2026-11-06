@@ -195,6 +195,49 @@ public class MeetingTypesTests
         Assert.Empty(await client.GetFromJsonAsync<MeetingType[]>("/api/meeting-types") ?? []);
     }
 
+    [Fact]
+    public async Task Delete_RemovesMeetingTypeFromList()
+    {
+        await using var api = new CalendarApiFactory();
+        var client = api.CreateClient();
+        var kept = await Create(client, new { name = "Знакомство", durationMinutes = 30 });
+        var deleted = await Create(client, new { name = "Разбор", durationMinutes = 90 });
+
+        var response = await client.DeleteAsync($"/api/meeting-types/{deleted.Id}");
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        await response.MatchesContract("/api/meeting-types/{id}");
+        var listed = await client.GetFromJsonAsync<MeetingType[]>("/api/meeting-types") ?? [];
+        Assert.Equal([kept.Id], listed.Select(t => t.Id));
+    }
+
+    [Theory]
+    [InlineData("3f2b8c1e-0d4a-4b6e-9a51-7c2d9e8f1a30")]
+    [InlineData("not-a-guid")]
+    public async Task Delete_ReturnsNotFoundForUnknownId(string id)
+    {
+        await using var api = new CalendarApiFactory();
+
+        var response = await api.CreateClient().DeleteAsync($"/api/meeting-types/{id}");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        await response.MatchesContract("/api/meeting-types/{id}");
+    }
+
+    [Fact]
+    public async Task Delete_ReturnsNotFoundWhenAlreadyDeleted()
+    {
+        await using var api = new CalendarApiFactory();
+        var client = api.CreateClient();
+        var created = await Create(client, new { name = "Знакомство", durationMinutes = 30 });
+        await client.DeleteAsync($"/api/meeting-types/{created.Id}");
+
+        var response = await client.DeleteAsync($"/api/meeting-types/{created.Id}");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        await response.MatchesContract("/api/meeting-types/{id}");
+    }
+
     private static async Task<MeetingType> Create(HttpClient client, object input)
     {
         var response = await client.PostAsJsonAsync("/api/meeting-types", input);

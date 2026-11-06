@@ -38,6 +38,26 @@ public class ContractAssertTests
         await Assert.ThrowsAsync<TrueException>(() => response.MatchesContract("/api/health"));
     }
 
+    [Fact]
+    public async Task MatchesContract_AcceptsNoBodyWhereContractDescribesNone()
+    {
+        using var response = new HttpResponseMessage(HttpStatusCode.NoContent)
+        {
+            RequestMessage = new HttpRequestMessage(HttpMethod.Delete, "/api/meeting-types/1"),
+        };
+
+        await response.MatchesContract("/api/meeting-types/{id}");
+    }
+
+    [Fact]
+    public async Task MatchesContract_FailsOnBodyWhereContractDescribesNone()
+    {
+        using var response = Response(HttpStatusCode.NoContent, "{}");
+        response.RequestMessage = new HttpRequestMessage(HttpMethod.Delete, "/api/meeting-types/1");
+
+        await Assert.ThrowsAsync<TrueException>(() => response.MatchesContract("/api/meeting-types/{id}"));
+    }
+
     private static HttpResponseMessage Response(
         HttpStatusCode status, string body, string mediaType = "application/json") =>
         new(status)

@@ -69,6 +69,11 @@ api.MapPut("/meeting-types/{id:guid}", async Task<Results<Ok<MeetingType>, NotFo
     return TypedResults.Ok(meetingType);
 });
 
+api.MapDelete("/meeting-types/{id:guid}", async Task<Results<NoContent, NotFound>> (Guid id, CalendarDb db) =>
+    await db.MeetingTypes.Where(t => t.Id == id).ExecuteDeleteAsync() == 0
+        ? TypedResults.NotFound()
+        : TypedResults.NoContent());
+
 app.Run();
 
 record HealthStatus(string Status);

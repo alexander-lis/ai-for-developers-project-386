@@ -104,4 +104,9 @@ interface MeetingTypes {
     | MeetingType
     | ValidationProblem
     | NotFoundProblem;
+
+  /** Delete a meeting type; meetings already booked keep their snapshot of it */
+  @delete delete(@path @format("uuid") id: string):
+    | NoContentResponse
+    | NotFoundProblem;
 }
