@@ -46,6 +46,7 @@ public class MeetingsTests
         var response = await Post(api.CreateClient(), typeId, "  Анна\n", TuesdayTen);
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        await response.MatchesContract(Path);
         Assert.Equal("Анна", (await response.Content.ReadFromJsonAsync<MeetingBody>())?.GuestName);
     }
 
@@ -150,6 +151,7 @@ public class MeetingsTests
         var response = await Post(api.CreateClient(), typeId, "Анна", DateTimeOffset.Parse(start));
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        await response.MatchesContract(Path);
         var meeting = await response.Content.ReadFromJsonAsync<MeetingBody>();
         Assert.Equal(DateTimeOffset.Parse(start).UtcDateTime, meeting?.Start);
     }
@@ -165,6 +167,7 @@ public class MeetingsTests
         var response = await Post(client, typeId, "Борис", TuesdayTen.AddHours(1));
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        await response.MatchesContract(Path);
     }
 
     [Fact]
