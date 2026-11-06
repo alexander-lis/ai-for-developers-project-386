@@ -55,8 +55,9 @@ local full = (typed) {
     check = "npm test --silent"
   }
   // backend-fmt and dotnet test both use obj/, so they must not run at once.
+  // The tests check responses against the generated openapi.yaml.
   ["backend-test"] {
-    depends = "backend-fmt"
+    depends = List("backend-fmt", "generate")
     dir = "backend"
     check = "dotnet test CalendarApi.slnx"
   }
