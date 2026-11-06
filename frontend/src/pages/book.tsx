@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { ru } from "react-day-picker/locale";
 import { toast } from "sonner";
 import {
@@ -9,21 +9,17 @@ import {
   type MeetingType,
   type Slot,
 } from "@/client";
-import { formatTimeRange, fromPlainDate, toPlainDate } from "@/calendar-time";
+import { formatDuration, formatTimeRange, fromPlainDate, toPlainDate } from "@/calendar-time";
 import {
   BookingDialog,
   type BookingOutcome,
   type BookingTarget,
 } from "@/components/booking-dialog";
-import { LoadError } from "@/components/load-error";
+import { LoadStatus } from "@/components/load-status";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { bookingConflict, meetingTypeUnavailable, noFreeSlots, noMeetingTypes } from "@/messages";
-
-type PageState =
-  | { status: "loading" }
-  | { status: "error" }
-  | { status: "loaded"; meetingTypes: MeetingType[]; timeZone: string };
+import { useLoad } from "@/use-load";
 
 /** Booking days of the selected meeting type; `date` is the selected day, if any has slots. */
 type DaysState =
@@ -31,12 +27,12 @@ type DaysState =
   | { status: "error" }
   | { status: "loaded"; days: BookingDay[]; date?: string };
 
-async function fetchPage(): Promise<PageState> {
+async function fetchPage() {
   // Network and server failures come back as `error` with no `data`.
   const [types, calendar] = await Promise.all([meetingTypesList(), calendarGet()]);
   return types.data && calendar.data
-    ? { status: "loaded", meetingTypes: types.data, timeZone: calendar.data.timeZone }
-    : { status: "error" };
+    ? { meetingTypes: types.data, timeZone: calendar.data.timeZone }
+    : undefined;
 }
 
 /** Days of a meeting type; `keepDate` stays selected while it still has slots. */
@@ -62,7 +58,7 @@ type BookingState = { open: boolean; target?: BookingTarget };
 
 /** Guest screen: meeting types, the days of the booking window and the free slots of a day. */
 export function BookPage() {
-  const [page, setPage] = useState<PageState>({ status: "loading" });
+  const { state: page, reload: reloadPage } = useLoad(fetchPage);
   const [meetingTypeId, setMeetingTypeId] = useState<string>();
   const [days, setDays] = useState<DaysState>({ status: "loading" });
   const [slotStart, setSlotStart] = useState<string>();
@@ -71,20 +67,6 @@ export function BookPage() {
   const [booking, setBooking] = useState<BookingState>({ open: false });
   // Only the answer to the latest request may land: types can be switched faster than days load.
   const daysRequest = useRef(0);
-
-  // Fetched on every visit: the page mounts anew on each navigation.
-  useEffect(() => {
-    let current = true;
-    void fetchPage().then((next) => current && setPage(next));
-    return () => {
-      current = false;
-    };
-  }, []);
-
-  function reloadPage() {
-    setPage({ status: "loading" });
-    void fetchPage().then(setPage);
-  }
 
   /**
    * Days of a meeting type. With `keepDate` (after a booking) the days on screen stay until the
@@ -137,7 +119,9 @@ export function BookPage() {
     }
     if (outcome.status === "booked" && page.status === "loaded") {
       const { meeting } = outcome;
-      toast(`Вы записаны: ${meeting.meetingTypeName}, ${formatTimeRange(meeting, page.timeZone)}`);
+      toast(
+        `Вы записаны: ${meeting.meetingTypeName}, ${formatTimeRange(meeting, page.data.timeZone)}`,
+      );
     }
     setConflict(outcome.status === "conflict");
     if (meetingTypeId) {
@@ -153,11 +137,11 @@ export function BookPage() {
   if (page.status !== "loaded") {
     return (
       <Screen>
-        {page.status === "loading" && <p className="text-muted-foreground">Загрузка…</p>}
-        {page.status === "error" && <LoadError onRetry={reloadPage} />}
+        <LoadStatus status={page.status} onRetry={reloadPage} />
       </Screen>
     );
   }
+  const { meetingTypes, timeZone } = page.data;
 
   return (
     <Screen>
@@ -165,7 +149,7 @@ export function BookPage() {
         <Block title="Тип встречи">
           {typeDeleted && <p role="alert">{meetingTypeUnavailable}</p>}
           <MeetingTypeChoice
-            meetingTypes={page.meetingTypes}
+            meetingTypes={meetingTypes}
             selectedId={meetingTypeId}
             onSelect={selectMeetingType}
           />
@@ -173,8 +157,7 @@ export function BookPage() {
         {meetingTypeId && (
           <>
             <Block title="День">
-              {days.status === "loading" && <p className="text-muted-foreground">Загрузка…</p>}
-              {days.status === "error" && <LoadError onRetry={() => loadDays(meetingTypeId)} />}
+              <LoadStatus status={days.status} onRetry={() => loadDays(meetingTypeId)} />
               {days.status === "loaded" && (
                 <BookingCalendar
                   key={meetingTypeId}
@@ -189,7 +172,7 @@ export function BookPage() {
               {days.status === "loaded" && (
                 <SlotChoice
                   slots={days.days.find((day) => day.date === days.date)?.slots ?? []}
-                  timeZone={page.timeZone}
+                  timeZone={timeZone}
                   selectedStart={slotStart}
                   onSelect={selectSlot}
                   onBook={(slot) =>
@@ -198,7 +181,7 @@ export function BookPage() {
                       target: {
                         meetingTypeId,
                         meetingTypeName:
-                          page.meetingTypes.find((type) => type.id === meetingTypeId)?.name ?? "",
+                          meetingTypes.find((type) => type.id === meetingTypeId)?.name ?? "",
                         slot,
                       },
                     })
@@ -211,7 +194,7 @@ export function BookPage() {
       </div>
       <BookingDialog
         {...booking}
-        timeZone={page.timeZone}
+        timeZone={timeZone}
         onOpenChange={(open) => setBooking({ ...booking, open })}
         onDone={finishBooking}
       />
@@ -266,7 +249,7 @@ function MeetingTypeChoice({
                 {meetingType.description}
               </span>
             )}
-            <span className="text-sm text-muted-foreground">{meetingType.durationMinutes} мин</span>
+            <span className="text-sm text-muted-foreground">{formatDuration(meetingType)}</span>
           </button>
         </li>
       ))}

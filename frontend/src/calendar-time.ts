@@ -24,11 +24,16 @@ export function formatTimeRange(range: { start: string; end: string }, timeZone:
 }
 
 /**
- * A meeting duration as "60 мин", from its own start and end: the meeting type may have been
- * edited or deleted since the booking.
+ * A duration as "60 мин": of a meeting type, or of a meeting from its own start and end, since the
+ * meeting type may have been edited or deleted after the meeting was booked.
  */
-export function formatDuration(range: { start: string; end: string }): string {
-  const minutes = (Date.parse(range.end) - Date.parse(range.start)) / 60_000;
+export function formatDuration(
+  of: { durationMinutes: number } | { start: string; end: string },
+): string {
+  const minutes =
+    "durationMinutes" in of
+      ? of.durationMinutes
+      : (Date.parse(of.end) - Date.parse(of.start)) / 60_000;
   return `${minutes} мин`;
 }
 

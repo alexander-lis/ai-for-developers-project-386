@@ -74,6 +74,10 @@ it("writes the duration of a meeting in minutes from its start and end", () => {
   );
 });
 
+it("writes the duration of a meeting type in minutes", () => {
+  expect(formatDuration({ durationMinutes: 45 })).toBe("45 мин");
+});
+
 it("keeps long durations in minutes, as the meeting types screen does", () => {
   expect(formatDuration({ start: "2026-11-09T06:00:00Z", end: "2026-11-09T14:00:00Z" })).toBe(
     "480 мин",

@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { meetingTypesList, type MeetingType } from "@/client";
-import { LoadError } from "@/components/load-error";
+import { formatDuration } from "@/calendar-time";
+import { LoadStatus } from "@/components/load-status";
 import {
   DeleteMeetingTypeDialog,
   MeetingTypeDialog,
@@ -9,40 +10,22 @@ import {
 } from "@/components/meeting-type-dialogs";
 import { Button } from "@/components/ui/button";
 import { meetingTypeAlreadyDeleted, noMeetingTypes } from "@/messages";
-
-type State =
-  | { status: "loading" }
-  | { status: "error" }
-  | { status: "loaded"; meetingTypes: MeetingType[] };
+import { useLoad } from "@/use-load";
 
 /** A dialog keeps its meeting type while closing, so the closing animation shows the same text. */
 type DialogState = { open: boolean; meetingType?: MeetingType };
 
-async function fetchMeetingTypes(): Promise<State> {
+async function fetchMeetingTypes() {
   // Network and server failures come back as `error` with no `data`.
   const { data } = await meetingTypesList();
-  return data ? { status: "loaded", meetingTypes: data } : { status: "error" };
+  return data;
 }
 
 /** Owner screen: the Owner's meeting types, as the server sorts them, with create, edit, delete. */
 export function MeetingTypesPage() {
-  const [state, setState] = useState<State>({ status: "loading" });
+  const { state, reload, refresh } = useLoad(fetchMeetingTypes);
   const [editor, setEditor] = useState<DialogState>({ open: false });
   const [deletion, setDeletion] = useState<DialogState>({ open: false });
-
-  // Fetched on every visit: the page mounts anew on each navigation.
-  useEffect(() => {
-    let current = true;
-    void fetchMeetingTypes().then((next) => current && setState(next));
-    return () => {
-      current = false;
-    };
-  }, []);
-
-  function retry() {
-    setState({ status: "loading" });
-    void fetchMeetingTypes().then(setState);
-  }
 
   // After a write the list stays on screen until the fresh one arrives.
   function finishWrite(outcome: WriteOutcome) {
@@ -51,7 +34,7 @@ export function MeetingTypesPage() {
     if (outcome === "meetingTypeDeleted") {
       toast(meetingTypeAlreadyDeleted);
     }
-    void fetchMeetingTypes().then(setState);
+    refresh();
   }
 
   return (
@@ -62,11 +45,10 @@ export function MeetingTypesPage() {
           <Button onClick={() => setEditor({ open: true })}>Создать тип встречи</Button>
         )}
       </div>
-      {state.status === "loading" && <p className="text-muted-foreground">Загрузка…</p>}
-      {state.status === "error" && <LoadError onRetry={retry} />}
+      <LoadStatus status={state.status} onRetry={reload} />
       {state.status === "loaded" && (
         <MeetingTypeList
-          meetingTypes={state.meetingTypes}
+          meetingTypes={state.data}
           onEdit={(meetingType) => setEditor({ open: true, meetingType })}
           onDelete={(meetingType) => setDeletion({ open: true, meetingType })}
         />
@@ -114,7 +96,7 @@ function MeetingTypeList({
             )}
           </div>
           <div className="flex shrink-0 items-center gap-4">
-            <span className="text-sm text-muted-foreground">{meetingType.durationMinutes} мин</span>
+            <span className="text-sm text-muted-foreground">{formatDuration(meetingType)}</span>
             <Button
               variant="outline"
               size="sm"
