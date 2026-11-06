@@ -79,6 +79,13 @@ api.MapDelete("/meeting-types/{id:guid}", async Task<Results<NoContent, NotFound
         ? TypedResults.NotFound()
         : TypedResults.NoContent());
 
+// Upcoming meetings of every Guest for both roles: those still in progress are included.
+api.MapGet("/meetings", async (CalendarDb db, TimeProvider time) =>
+{
+    var now = time.GetUtcNow().UtcDateTime;
+    return await db.Meetings.AsNoTracking().Where(m => m.End > now).OrderBy(m => m.Start).ToListAsync();
+});
+
 api.MapPost("/meetings", async Task<Results<Created<Meeting>, NotFound, ValidationProblem, ProblemHttpResult>> (
     MeetingInput input, CalendarDb db, TimeProvider time) =>
 {

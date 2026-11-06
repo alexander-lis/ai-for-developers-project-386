@@ -214,6 +214,12 @@ model MeetingInput {
 @route("/meetings")
 @tag("Meetings")
 interface Meetings {
+  /**
+   * List upcoming meetings of every Guest and meeting type: those that end later than now,
+   * sorted by start
+   */
+  @get list(): Meeting[];
+
   /** Book a slot; of simultaneous bookings of crossing slots exactly one succeeds */
   @post create(@body input: MeetingInput):
     | {

@@ -9,3 +9,8 @@ GET {{CalendarApi_HostAddress}}/api/meeting-types
 Accept: application/json
 
 ###
+
+GET {{CalendarApi_HostAddress}}/api/meetings
+Accept: application/json
+
+###

@@ -211,6 +211,8 @@ public class MeetingsTests
         {
             await response.MatchesContract(Path);
         }
+
+        Assert.Single(await List(client));
     }
 
     [Fact]
@@ -230,6 +232,10 @@ public class MeetingsTests
         Assert.Equal(
             ["09:00–09:30", "09:30–10:00", "11:00–11:30"],
             MoscowTimes((await GetBookingDays(api, typeId))[1])[..3]);
+        // The list keeps the name at booking.
+        var meeting = Assert.Single(await List(client));
+        Assert.Equal("Звонок", meeting.MeetingTypeName);
+        Assert.Equal(new DateTime(2026, 11, 10, 8, 0, 0, DateTimeKind.Utc), meeting.End);
     }
 
     [Fact]
@@ -246,6 +252,74 @@ public class MeetingsTests
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
         Assert.Equal(HttpStatusCode.Conflict, (await Post(client, other, "Борис", TuesdayTen)).StatusCode);
         Assert.DoesNotContain("10:00–11:00", MoscowTimes((await GetBookingDays(api, other))[1]));
+        var meeting = Assert.Single(await List(client));
+        Assert.Equal((deleted, "Звонок", "Анна"), (meeting.MeetingTypeId, meeting.MeetingTypeName, meeting.GuestName));
+    }
+
+    [Fact]
+    public async Task List_IsEmptyWithoutMeetings()
+    {
+        await using var api = new CalendarApiFactory();
+
+        Assert.Empty(await List(api.CreateClient()));
+    }
+
+    [Fact]
+    public async Task List_SortsMeetingsOfEveryTypeByStart()
+    {
+        await using var api = new CalendarApiFactory();
+        var hour = await AddMeetingType(api, durationMinutes: 60, name: "Знакомство");
+        var half = await AddMeetingType(api, durationMinutes: 30, name: "Разбор");
+        var client = api.CreateClient();
+        // Booked out of order: Thursday, then Tuesday 11:00, then Tuesday 10:00.
+        await Book(client, half, "Вера", TuesdayTen.AddDays(2));
+        await Book(client, hour, "Борис", TuesdayTen.AddHours(1));
+        await Book(client, half, "Анна", TuesdayTen);
+
+        var meetings = await List(client);
+
+        Assert.Equal(
+            [
+                ("Разбор", "Анна", "2026-11-10T07:00:00Z", "2026-11-10T07:30:00Z"),
+                ("Знакомство", "Борис", "2026-11-10T08:00:00Z", "2026-11-10T09:00:00Z"),
+                ("Разбор", "Вера", "2026-11-12T07:00:00Z", "2026-11-12T07:30:00Z"),
+            ],
+            meetings.Select(m => (m.MeetingTypeName, m.GuestName, Utc(m.Start), Utc(m.End))));
+        Assert.Equal([half, hour, half], meetings.Select(m => m.MeetingTypeId));
+        Assert.Equal(3, meetings.Select(m => m.Id).Distinct().Count());
+    }
+
+    [Fact]
+    public async Task List_LeavesOutMeetingsThatHaveEnded()
+    {
+        await using var api = new CalendarApiFactory();
+        var typeId = await AddMeetingType(api, durationMinutes: 60);
+        var client = api.CreateClient();
+        await Book(client, typeId, "Анна", TuesdayTen);
+        await Book(client, typeId, "Борис", TuesdayTen.AddHours(1));
+        await Book(client, typeId, "Вера", TuesdayTen.AddHours(2));
+
+        // Tuesday 11:30: Анна ended at 11:00, Борис is in progress.
+        api.Time.SetUtcNow(TuesdayTen.AddMinutes(90));
+
+        Assert.Equal(["Борис", "Вера"], (await List(client)).Select(m => m.GuestName));
+
+        // Exactly at the end of a meeting it is no longer upcoming.
+        api.Time.SetUtcNow(TuesdayTen.AddHours(2));
+
+        Assert.Equal(["Вера"], (await List(client)).Select(m => m.GuestName));
+    }
+
+    private static string Utc(DateTime time) =>
+        time.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ", System.Globalization.CultureInfo.InvariantCulture);
+
+    /// <summary>Lists upcoming meetings through the API, checked against the contract.</summary>
+    internal static async Task<MeetingBody[]> List(HttpClient client)
+    {
+        var response = await client.GetAsync(Path);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        await response.MatchesContract(Path);
+        return await response.Content.ReadFromJsonAsync<MeetingBody[]>() ?? [];
     }
 
     /// <summary>Books a slot through the API and requires a 201.</summary>
@@ -263,6 +337,6 @@ public class MeetingsTests
 
     private sealed record ValidationProblem(Dictionary<string, string[]> Errors);
 
-    private sealed record MeetingBody(
+    internal sealed record MeetingBody(
         Guid Id, Guid MeetingTypeId, string MeetingTypeName, string GuestName, DateTime Start, DateTime End);
 }
