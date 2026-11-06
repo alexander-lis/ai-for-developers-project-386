@@ -1,6 +1,7 @@
 import { Navigate, Outlet, Route, Routes } from "react-router";
 import { SiteHeader } from "@/components/site-header";
 import { HomePage } from "@/pages/home";
+import { MeetingTypesPage } from "@/pages/meeting-types";
 import { StubPage } from "@/pages/stub";
 import { useRole, type Role } from "@/role";
 import { RoleProvider } from "@/role-provider";
@@ -33,7 +34,7 @@ function App() {
             <Route path={paths.meetings} element={<StubPage title="Мои встречи" />} />
           </Route>
           <Route element={<RequireRole role="owner" />}>
-            <Route path={paths.ownerMeetingTypes} element={<StubPage title="Типы встреч" />} />
+            <Route path={paths.ownerMeetingTypes} element={<MeetingTypesPage />} />
             <Route path={paths.ownerMeetings} element={<StubPage title="Встречи" />} />
           </Route>
           <Route path="*" element={<Navigate to={paths.home} replace />} />
