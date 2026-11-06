@@ -42,6 +42,7 @@
 ## Правила
 
 - Коммиты по Conventional Commits (`feat:`, `fix:`, `chore:`); строки тела до 100 символов.
+- Релиз: release-please по `feat:`/`fix:` в `master` ведёт release-PR с changelog; его влитие ставит тег и GitHub Release. Версию руками не трогаем.
 - Свои проверки добавляй в задачу `check` через `hk.pkl`, а workflow в `ci.yml`. `.github/workflows/hexlet-check.yml` принадлежит Hexlet и остаётся без правок.
 - TypeScript во `frontend` держим на 6.x: `@hey-api/openapi-ts` 0.99.0 падает на версии 7. По этой же причине в `tsconfig` только `paths`: `baseUrl` в TS 6 даёт ошибку.
 - Типы проверяет `tsc -b`: корневой `tsconfig.json` содержит только ссылки, и `tsc --noEmit` на нём проверяет 0 файлов.
