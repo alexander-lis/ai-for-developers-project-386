@@ -25,3 +25,8 @@ dist-ssr
 
 # Generated from the contract: npm run openapi-ts
 src/client
+
+# Playwright output: mise run test:e2e
+test-results
+playwright-report
+blob-report

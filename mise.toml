@@ -15,12 +15,16 @@ run = [
   "npm ci",
   "npm ci --prefix contract",
   "npm ci --prefix frontend",
+  "dotnet tool restore",
 ]
 
 [tasks.setup]
-description = "Install dependencies and git hooks"
+description = "Install dependencies, the browser for test:e2e and git hooks"
 depends = ["install"]
-run = "hk install --mise"
+run = [
+  "npx --prefix frontend playwright install --only-shell chromium",
+  "hk install --mise",
+]
 
 [tasks.generate]
 description = "Generate OpenAPI and the frontend client from the contract"
@@ -40,6 +44,11 @@ run = [
   "dotnet test backend/CalendarApi.slnx",
   "npm test --prefix frontend",
 ]
+
+[tasks."test:e2e"]
+description = "Run the browser scenario on its own servers: API on :5384, app on :5374"
+depends = ["generate"]
+run = "npm run --prefix frontend test:e2e"
 
 [tasks.check]
 description = "Run every check, the same set CI runs"

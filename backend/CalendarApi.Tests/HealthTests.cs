@@ -1,8 +1,8 @@
-using Microsoft.AspNetCore.Mvc.Testing;
+using System.Net;
 
 namespace CalendarApi.Tests;
 
-public class HealthTests(WebApplicationFactory<Program> factory) : IClassFixture<WebApplicationFactory<Program>>
+public class HealthTests(CalendarApiFactory factory) : IClassFixture<CalendarApiFactory>
 {
     [Fact]
     public async Task Health_ReturnsOk()
@@ -11,7 +11,7 @@ public class HealthTests(WebApplicationFactory<Program> factory) : IClassFixture
 
         var response = await client.GetAsync("/api/health");
 
-        response.EnsureSuccessStatusCode();
-        Assert.Equal("""{"status":"ok"}""", await response.Content.ReadAsStringAsync());
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        await response.MatchesContract("/api/health");
     }
 }

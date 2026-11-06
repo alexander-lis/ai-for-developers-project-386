@@ -6,27 +6,32 @@
 
 Запускать из корня.
 
-- `mise run setup`: зависимости и git-хуки, один раз после клонирования
+- `mise run setup`: зависимости, Chromium для Playwright и git-хуки, один раз после клонирования
 - `mise run dev`: серверы в фоне, приложение на http://localhost:5173, API на :5284
 - `mise run dev:stop`: остановить серверы
 - `mise daemons logs backend`: логи сервера, так же `frontend`
 - `mise daemons restart backend`: применить правки C#, фронтенд обновляется сам
 - `mise run generate`: пересоздать клиент после правки контракта
-- `mise run test`: все тесты
+- `mise run test`: все тесты, кроме браузерного сценария
+- `mise run test:e2e`: браузерный сценарий Playwright (`frontend/e2e`) на своих серверах: API на :5384 с пустой базой SQLite во временной папке, приложение на :5374; `mise run dev` ему не мешает. Входит в `check`, но не в `pre-push`
 - `mise run lint`: линтеры, форматтеры, типы
 - `mise run fix`: исправить форматирование
 - `mise run check`: все проверки, то же запускает CI; задача готова, когда он зелёный
+- `dotnet ef migrations add <Name> --project backend/CalendarApi`: миграция после правки модели EF Core, сервер применяет её при старте
 
 Один тест:
 
 - `dotnet test backend/CalendarApi.slnx --filter FullyQualifiedName~Health_ReturnsOk`
 - `cd frontend && npx vitest run src/App.test.tsx`
+- `cd frontend && npx playwright test -g "Конфликт"`; `--ui` открывает UI mode, `npx playwright show-trace test-results/<тест>/trace.zip` показывает трассу упавшего теста. Клиент `@/client` нужен заранее: `mise run generate`
 
 ## Устройство
 
 `contract/main.tsp` это источник правды об API. `mise run generate` превращает его в `contract/tsp-output/schema/openapi.yaml`, а затем в `frontend/src/client`. Оба результата в git не входят, клиент импортируется как `@/client`.
 
 Сервер в `backend/CalendarApi` (.NET 10, Minimal API) написан вручную: зрелого генератора под него нет. Компилятор не сверяет его с контрактом, поэтому при правке контракта обновляй `Program.cs` и тесты бекенда вместе с ним.
+
+Тесты бекенда сверяют ответы с `openapi.yaml` через `response.MatchesContract(path)` из `ContractAssert.cs`, поэтому без `mise run generate` они падают. Каждый `CalendarApiFactory` поднимает сервер на своём временном файле SQLite (`ConnectionStrings:Calendar`) и удаляет его при освобождении.
 
 Все эндпоинты лежат под `/api`: по этому префиксу Vite проксирует запросы на бекенд.
 
@@ -39,6 +44,7 @@
 ## Правила
 
 - Коммиты по Conventional Commits (`feat:`, `fix:`, `chore:`); строки тела до 100 символов.
+- Релиз: release-please по `feat:`/`fix:` в `master` ведёт release-PR с changelog; его влитие ставит тег и GitHub Release. Версию руками не трогаем.
 - Свои проверки добавляй в задачу `check` через `hk.pkl`, а workflow в `ci.yml`. `.github/workflows/hexlet-check.yml` принадлежит Hexlet и остаётся без правок.
 - TypeScript во `frontend` держим на 6.x: `@hey-api/openapi-ts` 0.99.0 падает на версии 7. По этой же причине в `tsconfig` только `paths`: `baseUrl` в TS 6 даёт ошибку.
 - Типы проверяет `tsc -b`: корневой `tsconfig.json` содержит только ссылки, и `tsc --noEmit` на нём проверяет 0 файлов.

@@ -1,0 +1,26 @@
+name: Release Please
+
+on:
+  push:
+    branches: [master]
+
+permissions: {}
+
+# A waiting run replaces an older waiting one: the newest run sees every commit anyway.
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  # Opens or updates the release PR; merging it creates the tag and the GitHub Release.
+  release-please:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      issues: write # labels on the release PR
+      pull-requests: write
+    steps:
+      # Reads release-please-config.json and .release-please-manifest.json.
+      - name: Run release-please
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
