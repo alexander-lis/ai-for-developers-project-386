@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using CalendarApi;
 using Microsoft.EntityFrameworkCore;
@@ -11,7 +12,24 @@ builder.Services.AddSqlite<CalendarDb>(builder.Configuration.GetConnectionString
 builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull);
 
+// Every error, including bad JSON and 500, as RFC 9457 Problem Details.
+builder.Services.AddProblemDetails(options => options.CustomizeProblemDetails = context =>
+{
+    // Validation names fields as C# properties; the contract names them as JSON does.
+    if (context.ProblemDetails is HttpValidationProblemDetails validation)
+    {
+        validation.Errors = validation.Errors.ToDictionary(
+            error => JsonNamingPolicy.CamelCase.ConvertName(error.Key), error => error.Value);
+    }
+});
+
+// DataAnnotations on request models, checked before the handler runs.
+builder.Services.AddValidation();
+
 var app = builder.Build();
+
+app.UseExceptionHandler();
+app.UseStatusCodePages();
 
 using (var scope = app.Services.CreateScope())
 {
@@ -26,6 +44,14 @@ api.MapGet("/health", () => new HealthStatus("ok"));
 var byName = StringComparer.Create(CultureInfo.GetCultureInfo("ru-RU"), ignoreCase: true);
 api.MapGet("/meeting-types", async (CalendarDb db) =>
     (await db.MeetingTypes.AsNoTracking().ToListAsync()).OrderBy(t => t.Name, byName));
+
+api.MapPost("/meeting-types", async (MeetingTypeInput input, CalendarDb db) =>
+{
+    var meetingType = MeetingType.Create(input);
+    db.MeetingTypes.Add(meetingType);
+    await db.SaveChangesAsync();
+    return TypedResults.Created((string?)null, meetingType);
+});
 
 app.Run();
 
