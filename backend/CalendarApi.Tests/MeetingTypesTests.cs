@@ -140,6 +140,19 @@ public class MeetingTypesTests
         Assert.Empty(await client.GetFromJsonAsync<MeetingType[]>("/api/meeting-types") ?? []);
     }
 
+    [Theory]
+    [InlineData("""{"name":"Знакомство","durationMinutes":""")]
+    [InlineData("""{"name":"Знакомство","durationMinutes":30.5}""")]
+    public async Task Create_RejectsMalformedJson(string body)
+    {
+        await using var api = new CalendarApiFactory();
+
+        var response = await api.CreateClient().PostAsync("/api/meeting-types", Json(body));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        await response.MatchesContract("/api/meeting-types");
+    }
+
     [Fact]
     public async Task Update_ReplacesAllFields()
     {

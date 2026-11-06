@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Text.Json;
 using System.Text.Json.Serialization;
 using CalendarApi;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -14,23 +13,14 @@ builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull);
 
 // Every error, including bad JSON and 500, as RFC 9457 Problem Details.
-builder.Services.AddProblemDetails(options => options.CustomizeProblemDetails = context =>
-{
-    // Validation names fields as C# properties; the contract names them as JSON does.
-    if (context.ProblemDetails is HttpValidationProblemDetails validation)
-    {
-        validation.Errors = validation.Errors.ToDictionary(
-            error => JsonNamingPolicy.CamelCase.ConvertName(error.Key), error => error.Value);
-    }
-});
+builder.Services.AddCalendarProblemDetails();
 
 // DataAnnotations on request models, checked before the handler runs.
 builder.Services.AddValidation();
 
 var app = builder.Build();
 
-app.UseExceptionHandler();
-app.UseStatusCodePages();
+app.UseCalendarProblemDetails();
 
 using (var scope = app.Services.CreateScope())
 {

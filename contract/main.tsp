@@ -35,7 +35,10 @@ model ValidationProblem extends Problem {
   @statusCode statusCode: 400;
   status: 400;
 
-  /** Messages by field name */
+  /**
+   * Messages by field name. JSON that cannot be read is reported under the field where reading
+   * stopped, or under `body`.
+   */
   errors: Record<string[]>;
 }
 
