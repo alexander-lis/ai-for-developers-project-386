@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { ru } from "react-day-picker/locale";
+import { toast } from "sonner";
 import {
   calendarGet,
   meetingTypesBookingDays,
@@ -9,10 +10,15 @@ import {
   type Slot,
 } from "@/client";
 import { formatTimeRange, fromPlainDate, toPlainDate } from "@/calendar-time";
+import {
+  BookingDialog,
+  type BookingOutcome,
+  type BookingTarget,
+} from "@/components/booking-dialog";
 import { LoadError } from "@/components/load-error";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { meetingTypeUnavailable, noFreeSlots, noMeetingTypes } from "@/messages";
+import { bookingConflict, meetingTypeUnavailable, noFreeSlots, noMeetingTypes } from "@/messages";
 
 type PageState =
   | { status: "loading" }
@@ -33,16 +39,23 @@ async function fetchPage(): Promise<PageState> {
     : { status: "error" };
 }
 
-async function fetchDays(meetingTypeId: string): Promise<DaysState | "gone"> {
+/** Days of a meeting type; `keepDate` stays selected while it still has slots. */
+async function fetchDays(meetingTypeId: string, keepDate?: string): Promise<DaysState | "gone"> {
   const { data, response } = await meetingTypesBookingDays({ path: { id: meetingTypeId } });
   if (response?.status === 404) {
     return "gone";
   }
-  // The first day with slots is selected by itself.
-  return data
-    ? { status: "loaded", days: data, date: data.find((day) => day.slots.length > 0)?.date }
-    : { status: "error" };
+  if (!data) {
+    return { status: "error" };
+  }
+  const withSlots = data.filter((day) => day.slots.length > 0);
+  // Otherwise the first day with slots is selected by itself.
+  const date = withSlots.some((day) => day.date === keepDate) ? keepDate : withSlots[0]?.date;
+  return { status: "loaded", days: data, date };
 }
+
+/** The booking dialog keeps its target while closing, so the closing animation shows the same text. */
+type BookingState = { open: boolean; target?: BookingTarget };
 
 /** Guest screen: meeting types, the days of the booking window and the free slots of a day. */
 export function BookPage() {
@@ -51,6 +64,8 @@ export function BookPage() {
   const [days, setDays] = useState<DaysState>({ status: "loading" });
   const [slotStart, setSlotStart] = useState<string>();
   const [gone, setGone] = useState(false);
+  const [conflict, setConflict] = useState(false);
+  const [booking, setBooking] = useState<BookingState>({ open: false });
   // Only the answer to the latest request may land: types can be switched faster than days load.
   const daysRequest = useRef(0);
 
@@ -68,28 +83,63 @@ export function BookPage() {
     void fetchPage().then(setPage);
   }
 
-  function loadDays(id: string) {
+  /**
+   * Days of a meeting type. With `keepDate` (after a booking) the days on screen stay until the
+   * fresh ones arrive, and the day stays selected while it has slots.
+   */
+  function loadDays(id: string, keepDate?: string) {
     const request = ++daysRequest.current;
-    setDays({ status: "loading" });
+    if (!keepDate) {
+      setDays({ status: "loading" });
+    }
     setSlotStart(undefined);
-    void fetchDays(id).then((next) => {
+    void fetchDays(id, keepDate).then((next) => {
       if (request !== daysRequest.current) {
         return;
       }
       if (next === "gone") {
-        setMeetingTypeId(undefined);
-        setGone(true);
-        reloadPage();
+        meetingTypeGone();
         return;
       }
       setDays(next);
     });
   }
 
+  /** The selected meeting type was deleted: start over from a fresh list of types. */
+  function meetingTypeGone() {
+    setMeetingTypeId(undefined);
+    setSlotStart(undefined);
+    setConflict(false);
+    setGone(true);
+    reloadPage();
+  }
+
   function selectMeetingType(id: string) {
     setMeetingTypeId(id);
     setGone(false);
+    setConflict(false);
     loadDays(id);
+  }
+
+  function selectSlot(start: string) {
+    setSlotStart(start);
+    setConflict(false);
+  }
+
+  function finishBooking(outcome: BookingOutcome) {
+    setBooking((state) => ({ ...state, open: false }));
+    if (outcome.status === "gone") {
+      meetingTypeGone();
+      return;
+    }
+    if (outcome.status === "booked" && page.status === "loaded") {
+      const { meeting } = outcome;
+      toast(`Вы записаны: ${meeting.meetingTypeName}, ${formatTimeRange(meeting, page.timeZone)}`);
+    }
+    setConflict(outcome.status === "conflict");
+    if (meetingTypeId) {
+      loadDays(meetingTypeId, days.status === "loaded" ? days.date : undefined);
+    }
   }
 
   function selectDate(date: string) {
@@ -132,18 +182,36 @@ export function BookPage() {
               )}
             </Block>
             <Block title="Время">
+              {conflict && <p role="alert">{bookingConflict}</p>}
               {days.status === "loaded" && (
                 <SlotChoice
                   slots={days.days.find((day) => day.date === days.date)?.slots ?? []}
                   timeZone={page.timeZone}
                   selectedStart={slotStart}
-                  onSelect={setSlotStart}
+                  onSelect={selectSlot}
+                  onBook={(slot) =>
+                    setBooking({
+                      open: true,
+                      target: {
+                        meetingTypeId,
+                        meetingTypeName:
+                          page.meetingTypes.find((type) => type.id === meetingTypeId)?.name ?? "",
+                        slot,
+                      },
+                    })
+                  }
                 />
               )}
             </Block>
           </>
         )}
       </div>
+      <BookingDialog
+        {...booking}
+        timeZone={page.timeZone}
+        onOpenChange={(open) => setBooking({ ...booking, open })}
+        onDone={finishBooking}
+      />
     </Screen>
   );
 }
@@ -253,26 +321,38 @@ function SlotChoice({
   timeZone,
   selectedStart,
   onSelect,
+  onBook,
 }: {
   slots: Slot[];
   timeZone: string;
   selectedStart?: string;
   onSelect: (start: string) => void;
+  onBook: (slot: Slot) => void;
 }) {
+  if (slots.length === 0) {
+    return null;
+  }
+
+  const selected = slots.find((slot) => slot.start === selectedStart);
   return (
-    <ul className="flex flex-col gap-2">
-      {slots.map((slot) => (
-        <li key={slot.start}>
-          <Button
-            variant={slot.start === selectedStart ? "default" : "outline"}
-            aria-pressed={slot.start === selectedStart}
-            className="w-full"
-            onClick={() => onSelect(slot.start)}
-          >
-            {formatTimeRange(slot, timeZone)}
-          </Button>
-        </li>
-      ))}
-    </ul>
+    <div className="flex flex-col gap-4">
+      <ul className="flex flex-col gap-2">
+        {slots.map((slot) => (
+          <li key={slot.start}>
+            <Button
+              variant={slot.start === selectedStart ? "default" : "outline"}
+              aria-pressed={slot.start === selectedStart}
+              className="w-full"
+              onClick={() => onSelect(slot.start)}
+            >
+              {formatTimeRange(slot, timeZone)}
+            </Button>
+          </li>
+        ))}
+      </ul>
+      <Button disabled={!selected} onClick={() => selected && onBook(selected)}>
+        Записаться
+      </Button>
+    </div>
   );
 }

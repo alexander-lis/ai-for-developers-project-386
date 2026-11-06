@@ -12,3 +12,6 @@ export const meetingTypeUnavailable = "Этот тип встречи больш
 export const noMeetingTypes = "Владелец ещё не добавил типы встреч";
 
 export const noFreeSlots = "В ближайшие 14 дней свободных слотов нет";
+
+/** The slot stopped being free after the Guest saw it: see "Конфликт" in GLOSSARY.md. */
+export const bookingConflict = "Это время уже занято, выберите другое";
