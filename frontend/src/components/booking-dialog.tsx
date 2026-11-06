@@ -48,7 +48,7 @@ export function BookingDialog({
       {target && (
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Запись на встречу</DialogTitle>
+            <DialogTitle>Записаться на встречу</DialogTitle>
             <DialogDescription>
               {target.meetingTypeName}, {formatTimeRange(target.slot, timeZone)}
             </DialogDescription>

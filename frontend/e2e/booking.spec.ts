@@ -40,7 +40,7 @@ async function pickFirstSlot(page: Page) {
 
 async function confirmBooking(page: Page, guestName: string) {
   await page.getByRole("button", { name: "Записаться" }).click();
-  const dialog = page.getByRole("dialog", { name: "Запись на встречу" });
+  const dialog = page.getByRole("dialog", { name: "Записаться на встречу" });
   await dialog.getByLabel("Имя").fill(guestName);
   await dialog.getByRole("button", { name: "Подтвердить" }).click();
   await expect(dialog).toBeHidden();
@@ -66,7 +66,7 @@ test("гость записывается на Слот и видит Встре
   await expect(meeting).toContainText(slotText);
 });
 
-test("запись на Слот, который заняли, пока он был выбран, даёт Конфликт", async ({
+test("гость записывается на Слот, который заняли, пока он был выбран, и получает Конфликт", async ({
   page,
   request,
 }) => {
