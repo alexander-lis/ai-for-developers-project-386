@@ -1,16 +1,22 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Time.Testing;
 
 namespace CalendarApi.Tests;
 
 /// <summary>
-/// The API on its own temporary SQLite file, deleted on dispose.
-/// Not <c>:memory:</c>: concurrency tests need real parallel connections.
+/// The API on its own temporary SQLite file, deleted on dispose, with the clock stopped at
+/// <see cref="Now"/>. Not <c>:memory:</c>: concurrency tests need real parallel connections.
 /// </summary>
 public class CalendarApiFactory : WebApplicationFactory<Program>
 {
+    /// <summary>Monday 9 November 2026, 10:00 in the Calendar time zone.</summary>
+    public static readonly DateTimeOffset Now = new(2026, 11, 9, 10, 0, 0, TimeSpan.FromHours(3));
+
     private readonly string _databasePath;
     private readonly bool _ownsDatabase;
 
@@ -24,6 +30,9 @@ public class CalendarApiFactory : WebApplicationFactory<Program>
         _databasePath = databasePath;
         _ownsDatabase = ownsDatabase;
     }
+
+    /// <summary>The server clock; move it with <c>SetUtcNow</c> or <c>Advance</c>.</summary>
+    public FakeTimeProvider Time { get; } = new(Now);
 
     /// <summary>The API on a given file, e.g. to restart it; the caller deletes the file.</summary>
     public static CalendarApiFactory OnDatabase(string databasePath) => new(databasePath, ownsDatabase: false);
@@ -50,8 +59,11 @@ public class CalendarApiFactory : WebApplicationFactory<Program>
         await db.SaveChangesAsync();
     }
 
-    protected override void ConfigureWebHost(IWebHostBuilder builder) =>
+    protected override void ConfigureWebHost(IWebHostBuilder builder)
+    {
         builder.UseSetting("ConnectionStrings:Calendar", ConnectionString(_databasePath));
+        builder.ConfigureTestServices(services => services.Replace(ServiceDescriptor.Singleton<TimeProvider>(Time)));
+    }
 
     public override async ValueTask DisposeAsync()
     {

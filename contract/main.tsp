@@ -101,6 +101,23 @@ model MeetingTypeInput {
   durationMinutes: int32;
 }
 
+/** A span of time a Guest can book with a meeting type; computed, so it has no id */
+model Slot {
+  start: utcDateTime;
+
+  /** Start plus the meeting type duration */
+  end: utcDateTime;
+}
+
+/** One day of the booking window with its free slots */
+model BookingDay {
+  /** The day in the calendar time zone */
+  date: plainDate;
+
+  /** Sorted by start; empty on days off and on days with no free slot */
+  slots: Slot[];
+}
+
 @route("/meeting-types")
 @tag("Meeting types")
 interface MeetingTypes {
@@ -120,6 +137,14 @@ interface MeetingTypes {
     | MeetingType
     | ValidationProblem
     | NotFoundProblem;
+
+  /**
+   * Free slots of a meeting type for each day of the booking window: exactly 14 days in order,
+   * starting today in the calendar time zone
+   */
+  @get
+  @route("{id}/booking-days")
+  bookingDays(@path @format("uuid") id: string): BookingDay[] | NotFoundProblem;
 
   /** Delete a meeting type; meetings already booked keep their snapshot of it */
   @delete delete(@path @format("uuid") id: string):

@@ -8,6 +8,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddSqlite<CalendarDb>(builder.Configuration.GetConnectionString("Calendar"));
 
+// The only source of "now"; tests stop it with FakeTimeProvider.
+builder.Services.AddSingleton(TimeProvider.System);
+
 // Optional fields of the contract are absent rather than null.
 builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull);
@@ -59,6 +62,15 @@ api.MapPut("/meeting-types/{id:guid}", async Task<Results<Ok<MeetingType>, NotFo
     meetingType.Replace(input);
     await db.SaveChangesAsync();
     return TypedResults.Ok(meetingType);
+});
+
+api.MapGet("/meeting-types/{id:guid}/booking-days", async Task<Results<Ok<IReadOnlyList<BookingDay>>, NotFound>> (
+    Guid id, CalendarDb db, TimeProvider time) =>
+{
+    var meetingType = await db.MeetingTypes.FindAsync(id);
+    return meetingType is null
+        ? TypedResults.NotFound()
+        : TypedResults.Ok(CalendarRules.BookingDays(time.GetUtcNow(), meetingType.DurationMinutes, meetings: []));
 });
 
 api.MapDelete("/meeting-types/{id:guid}", async Task<Results<NoContent, NotFound>> (Guid id, CalendarDb db) =>
