@@ -48,9 +48,9 @@ public static class CalendarRules
     /// Every day of the booking window in order, each with its free slots: grid slots that start
     /// strictly after <paramref name="now"/> and cross none of <paramref name="meetings"/>.
     /// </summary>
-    /// <param name="meetings">Intervals of meetings of any meeting type, in UTC.</param>
+    /// <param name="meetings">Intervals of meetings of any meeting type.</param>
     public static IReadOnlyList<BookingDay> BookingDays(
-        DateTimeOffset now, int durationMinutes, IReadOnlyCollection<(DateTime Start, DateTime End)> meetings)
+        DateTimeOffset now, int durationMinutes, IReadOnlyCollection<Interval> meetings)
     {
         var today = Today(now);
         return [.. Enumerable.Range(0, BookingWindowDays)
@@ -63,8 +63,7 @@ public static class CalendarRules
     /// Whether the slot shares time with a meeting. Touching is fine: a slot may start exactly when a
     /// meeting ends. Checked by intervals, not by equal slots, because grids of types differ.
     /// </summary>
-    public static bool Crosses(Slot slot, IEnumerable<(DateTime Start, DateTime End)> meetings) =>
-        meetings.Any(meeting => meeting.Start < slot.End && slot.Start < meeting.End);
+    public static bool Crosses(Slot slot, IEnumerable<Interval> meetings) => meetings.Any(slot.Crosses);
 
     /// <summary>
     /// Every slot of a meeting type on a day, regardless of "now" and meetings: from the start of
@@ -95,8 +94,15 @@ public static class CalendarRules
 /// <summary>What the frontend needs to know about the Calendar.</summary>
 public record CalendarSettings(string TimeZone);
 
+/// <summary>A span of time from <paramref name="Start"/> up to <paramref name="End"/>, in UTC.</summary>
+public record Interval(DateTime Start, DateTime End)
+{
+    /// <summary>Whether the two share time; touching at an end does not count.</summary>
+    public bool Crosses(Interval other) => other.Start < End && Start < other.End;
+}
+
 /// <summary>A span of time a Guest can book; see GLOSSARY.md. Times are UTC.</summary>
-public record Slot(DateTime Start, DateTime End);
+public record Slot(DateTime Start, DateTime End) : Interval(Start, End);
 
 /// <summary>One day of the booking window with its free slots.</summary>
 public record BookingDay(DateOnly Date, IReadOnlyList<Slot> Slots);

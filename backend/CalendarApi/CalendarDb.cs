@@ -9,16 +9,19 @@ public class CalendarDb(DbContextOptions<CalendarDb> options) : DbContext(option
 
     public DbSet<Meeting> Meetings => Set<Meeting>();
 
-    /// <summary>Intervals of meetings of every meeting type that have not ended by <paramref name="now"/>.</summary>
-    public async Task<IReadOnlyCollection<(DateTime Start, DateTime End)>> MeetingsAfter(DateTimeOffset now)
+    /// <summary>
+    /// Meetings of every meeting type that have not ended by <paramref name="now"/>: upcoming ones
+    /// and those in progress. A meeting that ends exactly at <paramref name="now"/> has ended.
+    /// </summary>
+    public IQueryable<Meeting> MeetingsNotEndedBy(DateTimeOffset now)
     {
-        var after = now.UtcDateTime;
-        var meetings = await Meetings.AsNoTracking()
-            .Where(m => m.End > after)
-            .Select(m => new { m.Start, m.End })
-            .ToListAsync();
-        return [.. meetings.Select(m => (m.Start, m.End))];
+        var utcNow = now.UtcDateTime;
+        return Meetings.AsNoTracking().Where(m => m.End > utcNow);
     }
+
+    /// <summary>Intervals of <see cref="MeetingsNotEndedBy"/>.</summary>
+    public async Task<IReadOnlyCollection<Interval>> IntervalsNotEndedBy(DateTimeOffset now) =>
+        await MeetingsNotEndedBy(now).Select(m => new Interval(m.Start, m.End)).ToListAsync();
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {

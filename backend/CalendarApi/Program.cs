@@ -71,7 +71,7 @@ api.MapGet("/meeting-types/{id:guid}/booking-days", async Task<Results<Ok<IReadO
     var meetingType = await db.MeetingTypes.FindAsync(id);
     return meetingType is null
         ? TypedResults.NotFound()
-        : TypedResults.Ok(CalendarRules.BookingDays(now, meetingType.DurationMinutes, await db.MeetingsAfter(now)));
+        : TypedResults.Ok(CalendarRules.BookingDays(now, meetingType.DurationMinutes, await db.IntervalsNotEndedBy(now)));
 });
 
 api.MapDelete("/meeting-types/{id:guid}", async Task<Results<NoContent, NotFound>> (Guid id, CalendarDb db) =>
@@ -81,10 +81,7 @@ api.MapDelete("/meeting-types/{id:guid}", async Task<Results<NoContent, NotFound
 
 // Upcoming meetings of every Guest for both roles: those still in progress are included.
 api.MapGet("/meetings", async (CalendarDb db, TimeProvider time) =>
-{
-    var now = time.GetUtcNow().UtcDateTime;
-    return await db.Meetings.AsNoTracking().Where(m => m.End > now).OrderBy(m => m.Start).ToListAsync();
-});
+    await db.MeetingsNotEndedBy(time.GetUtcNow()).OrderBy(m => m.Start).ToListAsync());
 
 api.MapPost("/meetings", async Task<Results<Created<Meeting>, NotFound, ValidationProblem, ProblemHttpResult>> (
     MeetingInput input, CalendarDb db, TimeProvider time) =>
@@ -116,7 +113,7 @@ api.MapPost("/meetings", async Task<Results<Created<Meeting>, NotFound, Validati
         });
     }
 
-    if (CalendarRules.Crosses(slot, await db.MeetingsAfter(now)))
+    if (CalendarRules.Crosses(slot, await db.IntervalsNotEndedBy(now)))
     {
         return TypedResults.Problem(statusCode: StatusCodes.Status409Conflict,
             detail: "Another meeting crosses the slot.");
