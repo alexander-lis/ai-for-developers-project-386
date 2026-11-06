@@ -4,7 +4,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { BookPage } from "@/pages/book";
 import { HomePage } from "@/pages/home";
 import { MeetingTypesPage } from "@/pages/meeting-types";
-import { StubPage } from "@/pages/stub";
+import { MeetingsPage } from "@/pages/meetings";
 import { useRole, type Role } from "@/role";
 import { RoleProvider } from "@/role-provider";
 import { paths } from "@/routes";
@@ -35,11 +35,11 @@ function App() {
           <Route index element={<HomePage />} />
           <Route element={<RequireRole role="guest" />}>
             <Route path={paths.book} element={<BookPage />} />
-            <Route path={paths.meetings} element={<StubPage title="Мои встречи" />} />
+            <Route path={paths.meetings} element={<MeetingsPage title="Мои встречи" />} />
           </Route>
           <Route element={<RequireRole role="owner" />}>
             <Route path={paths.ownerMeetingTypes} element={<MeetingTypesPage />} />
-            <Route path={paths.ownerMeetings} element={<StubPage title="Встречи" />} />
+            <Route path={paths.ownerMeetings} element={<MeetingsPage title="Встречи" />} />
           </Route>
           <Route path="*" element={<Navigate to={paths.home} replace />} />
         </Route>

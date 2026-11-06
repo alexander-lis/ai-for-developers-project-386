@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { formatTimeRange, fromPlainDate, toPlainDate } from "./calendar-time";
+import { formatDuration, formatTimeRange, fromPlainDate, toPlainDate } from "./calendar-time";
 
 const moscow = "Europe/Moscow";
 
@@ -63,4 +63,19 @@ it("turns a plain date into a local date of the same day for the date picker", (
 it("turns a picked local date back into a plain date", () => {
   expect(toPlainDate(new Date(2026, 0, 5, 15, 30))).toBe("2026-01-05");
   expect(toPlainDate(fromPlainDate("2026-12-31"))).toBe("2026-12-31");
+});
+
+it("writes the duration of a meeting in minutes from its start and end", () => {
+  expect(formatDuration({ start: "2026-11-09T07:00:00Z", end: "2026-11-09T08:00:00Z" })).toBe(
+    "60 мин",
+  );
+  expect(formatDuration({ start: "2026-11-09T07:00:00Z", end: "2026-11-09T07:45:00Z" })).toBe(
+    "45 мин",
+  );
+});
+
+it("keeps long durations in minutes, as the meeting types screen does", () => {
+  expect(formatDuration({ start: "2026-11-09T06:00:00Z", end: "2026-11-09T14:00:00Z" })).toBe(
+    "480 мин",
+  );
 });

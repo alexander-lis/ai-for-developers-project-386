@@ -24,6 +24,15 @@ export function formatTimeRange(range: { start: string; end: string }, timeZone:
 }
 
 /**
+ * A meeting duration as "60 мин", from its own start and end: the meeting type may have been
+ * edited or deleted since the booking.
+ */
+export function formatDuration(range: { start: string; end: string }): string {
+  const minutes = (Date.parse(range.end) - Date.parse(range.start)) / 60_000;
+  return `${minutes} мин`;
+}
+
+/**
  * A day from the API ("2026-11-09") as a local midnight, the way the date picker counts days.
  * The picker only labels the day, so the browser time zone does not shift it.
  */

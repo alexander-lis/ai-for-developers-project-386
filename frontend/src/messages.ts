@@ -15,3 +15,5 @@ export const noFreeSlots = "В ближайшие 14 дней свободных
 
 /** The slot stopped being free after the Guest saw it: see "Конфликт" in GLOSSARY.md. */
 export const bookingConflict = "Это время уже занято, выберите другое";
+
+export const noMeetings = "Предстоящих встреч пока нет";
