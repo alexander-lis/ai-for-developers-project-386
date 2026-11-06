@@ -6,13 +6,14 @@
 
 Запускать из корня.
 
-- `mise run setup`: зависимости и git-хуки, один раз после клонирования
+- `mise run setup`: зависимости, Chromium для Playwright и git-хуки, один раз после клонирования
 - `mise run dev`: серверы в фоне, приложение на http://localhost:5173, API на :5284
 - `mise run dev:stop`: остановить серверы
 - `mise daemons logs backend`: логи сервера, так же `frontend`
 - `mise daemons restart backend`: применить правки C#, фронтенд обновляется сам
 - `mise run generate`: пересоздать клиент после правки контракта
-- `mise run test`: все тесты
+- `mise run test`: все тесты, кроме браузерного сценария
+- `mise run test:e2e`: браузерный сценарий Playwright (`frontend/e2e`) на своих серверах: API на :5384 с пустой базой SQLite во временной папке, приложение на :5374; `mise run dev` ему не мешает. Входит в `check`, но не в `pre-push`
 - `mise run lint`: линтеры, форматтеры, типы
 - `mise run fix`: исправить форматирование
 - `mise run check`: все проверки, то же запускает CI; задача готова, когда он зелёный
@@ -22,6 +23,7 @@
 
 - `dotnet test backend/CalendarApi.slnx --filter FullyQualifiedName~Health_ReturnsOk`
 - `cd frontend && npx vitest run src/App.test.tsx`
+- `cd frontend && npx playwright test -g "Конфликт"`; `--ui` открывает UI mode, `npx playwright show-trace test-results/<тест>/trace.zip` показывает трассу упавшего теста. Клиент `@/client` нужен заранее: `mise run generate`
 
 ## Устройство
 

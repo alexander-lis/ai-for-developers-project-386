@@ -88,6 +88,13 @@ hooks {
         dir = "frontend"
         check = "npm audit --omit=dev"
       }
+      // Not in pre-push: it builds and starts both servers. Its dotnet run shares obj/ with
+      // dotnet test, so it waits for the backend tests.
+      ["frontend-e2e"] {
+        depends = List("generate", "backend-test")
+        dir = "frontend"
+        check = "npm run --silent test:e2e"
+      }
     }
   }
   ["fix"] {
