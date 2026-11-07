@@ -27,7 +27,7 @@
 
 ## Устройство
 
-`contract/main.tsp` это источник правды об API. `mise run generate` превращает его в `contract/tsp-output/schema/openapi.yaml`, а затем в `frontend/src/client`. Оба результата в git не входят, клиент импортируется как `@/client`.
+`contract/main.tsp` это источник правды об API. `mise run generate` превращает его в `contract/tsp-output/schema/openapi.yaml`, а затем в `frontend/src/client`. Оба результата в git не входят, клиент импортируется как `@/client`. Генерируемые пути (`contract/tsp-output/`, `frontend/src/client/`) руками не правим: меняем `main.tsp` и запускаем `mise run generate`. CI генерирует их с нуля в `mise run check` перед сборкой и тестами. Фронтенд ходит в API только через `@/client`, без ручного `fetch`.
 
 Сервер в `backend/CalendarApi` (.NET 10, Minimal API) написан вручную: зрелого генератора под него нет. Компилятор не сверяет его с контрактом, поэтому при правке контракта обновляй `Program.cs` и тесты бекенда вместе с ним.
 
@@ -44,6 +44,7 @@
 ## Правила
 
 - Коммиты по Conventional Commits (`feat:`, `fix:`, `chore:`); строки тела до 100 символов.
+- Коммит реализации ссылается на тикет, который он делает, номером в конце заголовка: `feat: запись на свободный слот (#24)`.
 - Релиз: release-please по `feat:`/`fix:` в `master` ведёт release-PR с changelog; его влитие ставит тег и GitHub Release. Версию руками не трогаем.
 - Свои проверки добавляй в задачу `check` через `hk.pkl`, а workflow в `ci.yml`. `.github/workflows/hexlet-check.yml` принадлежит Hexlet и остаётся без правок.
 - TypeScript во `frontend` держим на 6.x: `@hey-api/openapi-ts` 0.99.0 падает на версии 7. По этой же причине в `tsconfig` только `paths`: `baseUrl` в TS 6 даёт ошибку.
