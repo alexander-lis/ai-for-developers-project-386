@@ -46,7 +46,16 @@ async function confirmBooking(page: Page, guestName: string) {
   await expect(dialog).toBeHidden();
 }
 
-test("гость записывается на Слот и видит Встречу в «Моих встречах»", async ({ page }) => {
+function upcomingMeeting(page: Page, guestName: string) {
+  return page
+    .getByRole("list", { name: "Предстоящие встречи" })
+    .getByRole("listitem")
+    .filter({ has: page.getByText(guestName, { exact: true }) });
+}
+
+test("гость записывается на Слот, Встречу видят гость в «Моих встречах» и владелец во «Встречах»", async ({
+  page,
+}) => {
   const guestName = `Гость ${run}`;
   const { slotText, time } = await pickFirstSlot(page);
 
@@ -58,12 +67,13 @@ test("гость записывается на Слот и видит Встре
   await expect(time.getByRole("button", { name: slotText, exact: true })).toHaveCount(0);
 
   await page.getByRole("link", { name: "Мои встречи" }).click();
-  const meeting = page
-    .getByRole("list", { name: "Предстоящие встречи" })
-    .getByRole("listitem")
-    .filter({ has: page.getByText(guestName, { exact: true }) });
-  await expect(meeting).toContainText(meetingTypeName);
-  await expect(meeting).toContainText(slotText);
+  await expect(upcomingMeeting(page, guestName)).toContainText(meetingTypeName);
+  await expect(upcomingMeeting(page, guestName)).toContainText(slotText);
+
+  await page.getByRole("button", { name: "Войти как владелец" }).click();
+  await page.getByRole("link", { name: "Встречи", exact: true }).click();
+  await expect(upcomingMeeting(page, guestName)).toContainText(meetingTypeName);
+  await expect(upcomingMeeting(page, guestName)).toContainText(slotText);
 });
 
 test("гость записывается на Слот, который заняли, пока он был выбран, и получает Конфликт", async ({
