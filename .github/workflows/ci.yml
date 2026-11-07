@@ -40,5 +40,10 @@ jobs:
             npx --no -- commitlint --last
           fi
 
+      # The browser for the frontend-e2e step; caching it saves no time, says Playwright.
+      - name: Install Playwright browser
+        working-directory: frontend
+        run: npx playwright install --with-deps --only-shell chromium
+
       - name: Run checks
         run: mise run check

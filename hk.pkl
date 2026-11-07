@@ -55,8 +55,9 @@ local full = (typed) {
     check = "npm test --silent"
   }
   // backend-fmt and dotnet test both use obj/, so they must not run at once.
+  // The tests check responses against the generated openapi.yaml.
   ["backend-test"] {
-    depends = "backend-fmt"
+    depends = List("backend-fmt", "generate")
     dir = "backend"
     check = "dotnet test CalendarApi.slnx"
   }
@@ -86,6 +87,13 @@ hooks {
       ["frontend-audit"] {
         dir = "frontend"
         check = "npm audit --omit=dev"
+      }
+      // Not in pre-push: it builds and starts both servers. Its dotnet run shares obj/ with
+      // dotnet test, so it waits for the backend tests.
+      ["frontend-e2e"] {
+        depends = List("generate", "backend-test")
+        dir = "frontend"
+        check = "npm run --silent test:e2e"
       }
     }
   }
