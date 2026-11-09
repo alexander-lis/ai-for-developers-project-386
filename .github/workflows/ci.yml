@@ -47,3 +47,30 @@ jobs:
 
       - name: Run checks
         run: mise run check
+
+  # Not in mise run check: that one has to work without a Docker daemon.
+  docker-image:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Build image
+        run: docker build -t calendar .
+
+      - name: Start container on the port from PORT
+        run: docker run -d --name calendar -e PORT=4321 -p 4321:4321 calendar
+
+      # --retry-all-errors: until the server starts, Docker accepts and then resets connections.
+      - name: Check the API and the frontend respond
+        run: |
+          curl --fail --silent --show-error --retry 30 --retry-all-errors --retry-delay 1 \
+            http://127.0.0.1:4321/api/health
+          curl --fail --silent --show-error --output /dev/null http://127.0.0.1:4321/book
+
+      - name: Show container logs
+        if: failure()
+        run: docker logs calendar

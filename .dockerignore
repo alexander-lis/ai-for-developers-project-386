@@ -1,0 +1,10 @@
+**/node_modules
+**/bin
+**/obj
+**/*.db*
+contract/tsp-output
+frontend/dist
+frontend/src/client
+frontend/test-results
+frontend/playwright-report
+.git
