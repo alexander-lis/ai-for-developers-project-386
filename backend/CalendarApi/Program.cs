@@ -25,6 +25,10 @@ var app = builder.Build();
 
 app.UseCalendarProblemDetails();
 
+// The built frontend in wwwroot, as in the Docker image; in development Vite serves it instead.
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
 using (var scope = app.Services.CreateScope())
 {
     scope.ServiceProvider.GetRequiredService<CalendarDb>().Database.Migrate();
@@ -125,6 +129,10 @@ api.MapPost("/meetings", async Task<Results<Created<Meeting>, NotFound, Validati
     await transaction.CommitAsync();
     return TypedResults.Created((string?)null, meeting);
 });
+
+// Pages of the app are routes of React Router. Paths under /api stay out, so an unknown one is
+// a 404 and a wrong method a 405, not the HTML of the app.
+app.MapFallbackToFile("{*path:regex(^(?!api(/|$)).*$):nonfile}", "index.html");
 
 app.Run();
 

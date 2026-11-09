@@ -17,6 +17,8 @@
 - `mise run lint`: линтеры, форматтеры, типы
 - `mise run fix`: исправить форматирование
 - `mise run check`: все проверки, то же запускает CI; задача готова, когда он зелёный
+- `docker build -t calendar . && docker run --rm -e PORT=8080 -p 8080:8080 calendar`: приложение в контейнере, как в продакшене. Сборку и запуск образа проверяет job `docker-image` в CI, в `check` их нет
+- `E2E_BASE_URL=<адрес> npx playwright test` из `frontend/`: браузерный сценарий по запущенному контейнеру или публичной ссылке, свои серверы не поднимаются. Оставляет в базе Тип встречи и две Встречи
 - `dotnet ef migrations add <Name> --project backend/CalendarApi`: миграция после правки модели EF Core, сервер применяет её при старте
 
 Один тест:
@@ -33,7 +35,9 @@
 
 Тесты бекенда сверяют ответы с `openapi.yaml` через `response.MatchesContract(path)` из `ContractAssert.cs`, поэтому без `mise run generate` они падают. Каждый `CalendarApiFactory` поднимает сервер на своём временном файле SQLite (`ConnectionStrings:Calendar`) и удаляет его при освобождении.
 
-Все эндпоинты лежат под `/api`: по этому префиксу Vite проксирует запросы на бекенд.
+Все эндпоинты лежат под `/api`: по этому префиксу Vite проксирует запросы на бекенд. В образе прокси нет: `Dockerfile` кладёт сборку фронтенда в `wwwroot`, и сервер сам отдаёт и её, и `/api` с порта из `PORT`. Пути приложения вне `/api` получают `index.html`, неизвестный путь под `/api` отвечает 404.
+
+Выкат на Render (деплой при влитии в `master`) и подключение Render MCP из `.mcp.json` описаны в разделе «Деплой» `README.md`.
 
 Фронтенд: React Router, маршруты и навигация по ролям описаны в `frontend/src/routes.ts`, страницы в `frontend/src/pages`. Роль «владелец/гость» это фронтовое состояние в `localStorage` (`frontend/src/role-provider.tsx`), бекенд о ролях не знает.
 
