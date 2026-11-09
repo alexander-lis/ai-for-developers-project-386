@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.0](https://github.com/alexander-lis/ai-for-developers-project-386/compare/v1.0.0...v1.1.0) (2026-11-09)
+
+
+### Features
+
+* package the app into a Docker image running on PORT ([#30](https://github.com/alexander-lis/ai-for-developers-project-386/issues/30)) ([906c253](https://github.com/alexander-lis/ai-for-developers-project-386/commit/906c253f4a1d654440892f875d353c691a110208))
+* package the app into a Docker image running on PORT ([#30](https://github.com/alexander-lis/ai-for-developers-project-386/issues/30)) ([1c9eb50](https://github.com/alexander-lis/ai-for-developers-project-386/commit/1c9eb5061d57874820aa367604d0c00012d7fdaa))
+
 ## 1.0.0 (2026-11-07)
 
 
